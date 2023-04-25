@@ -2,9 +2,9 @@
 import Layout from "../layouts/Layout.astro";
 import Row from "../components/Row.astro";
 
-import type { Parsed } from "../pages/data.json";
+import { getReports } from "../pages/data.json";
 
-const data: Parsed[] = await fetch("/data.json").then((r) => r.json());
+const data = await getReports();
 ---
 
 <Layout title="Logs">
