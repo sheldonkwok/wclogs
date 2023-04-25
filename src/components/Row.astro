@@ -1,0 +1,13 @@
+---
+import type { Parsed } from "../pages/data.json";
+
+const { key, level, pass, owner, url } = Astro.props as Parsed;
+---
+
+<li class="link-card">
+  <a href={url}>
+    {key} - {level} - {pass ? "true" : "false"} - {owner}
+  </a>
+</li>
+
+<style></style>
