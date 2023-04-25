@@ -69,7 +69,7 @@ export interface Parsed {
 
 function parseReports(reports: Report[]): Parsed[] {
   return reports.flatMap((r) => {
-    return r.fights.reverse().map<Parsed>((f) => {
+    return r.fights.reverse().map((f) => {
       return {
         key: f.name,
         level: f.keystoneLevel,
