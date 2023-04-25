@@ -4,9 +4,7 @@ import Row from "../components/Row.astro";
 
 import type { Parsed } from "../pages/data.json";
 
-const data: Parsed[] = await fetch("http://localhost:3000/data.json").then(
-  (r) => r.json()
-);
+const data: Parsed[] = await fetch("/data.json").then((r) => r.json());
 ---
 
 <Layout title="Logs">
