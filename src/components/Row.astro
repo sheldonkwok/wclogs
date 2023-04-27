@@ -13,7 +13,7 @@ const passColor = pass ? "pass" : "fail";
     </a>
   </div>
 
-  <div>{owner}</div>
+  <div class="owner">{owner}</div>
 </div>
 
 <style>
@@ -21,9 +21,12 @@ const passColor = pass ? "pass" : "fail";
     display: flex;
     flex-direction: row;
     justify-content: space-between;
+
+    padding-bottom: 3px;
   }
   a {
     color: inherit;
+    text-decoration: none;
   }
 
   .pass {
@@ -31,5 +34,9 @@ const passColor = pass ? "pass" : "fail";
   }
   .fail {
     color: darkred;
+  }
+
+  .owner {
+    color: #f4ebd0;
   }
 </style>
