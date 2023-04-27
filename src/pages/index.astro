@@ -7,7 +7,7 @@ import { getReports } from "../pages/data.json";
 const data = await getReports();
 ---
 
-<Layout title="Logs">
+<Layout>
   <main>
     {data.map((d) => <Row {...d} />)}
   </main>
