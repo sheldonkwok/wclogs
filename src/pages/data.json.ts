@@ -3,7 +3,6 @@ const CLIENT_SECRET = import.meta.env.CLIENT_SECRET;
 
 export const get = async () => {
   const reports = await getReports();
-
   return { body: JSON.stringify(reports) };
 };
 

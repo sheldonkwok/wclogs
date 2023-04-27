@@ -9,9 +9,7 @@ const data = await getReports();
 
 <Layout title="Logs">
   <main>
-    <ul role="list">
-      {data.map((d) => <Row {...d} />)}
-    </ul>
+    {data.map((d) => <Row {...d} />)}
   </main>
 </Layout>
 

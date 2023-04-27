@@ -2,12 +2,34 @@
 import type { Parsed } from "../pages/data.json";
 
 const { key, level, pass, owner, url } = Astro.props as Parsed;
+
+const passColor = pass ? "pass" : "fail";
 ---
 
-<li class="link-card">
-  <a href={url}>
-    {key} - {level} - {pass ? "true" : "false"} - {owner}
-  </a>
-</li>
+<div class="row">
+  <div>
+    <a class={passColor} href={url}>
+      {key} - {level}
+    </a>
+  </div>
 
-<style></style>
+  <div>{owner}</div>
+</div>
+
+<style>
+  .row {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+  }
+  a {
+    color: inherit;
+  }
+
+  .pass {
+    color: green;
+  }
+  .fail {
+    color: darkred;
+  }
+</style>
