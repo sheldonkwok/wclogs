@@ -19,11 +19,16 @@ const query = gql`
           owner {
             name
           }
+          startTime
+          playerDetails(fightIDs: [0,1,2,3,4,5,6,7,8,9,10])
           fights(difficulty: ${MYTHIC_DIFF}) {
             id
             name
             keystoneLevel
             kill
+            friendlyPlayers
+            keystoneTime
+            endTime
           }
         }
       }
@@ -34,7 +39,20 @@ const query = gql`
 interface Report {
   code: string;
   owner: { name: string };
+  startTime: number;
+  playerDetails: PlayerDetails;
   fights: Fight[];
+}
+
+interface PlayerDetails {
+  data: {
+    playerDetails: { dps: Player[]; healers: Player[]; tanks: Player[] };
+  };
+}
+
+interface Player {
+  id: number;
+  name: string;
 }
 
 interface Fight {
@@ -42,6 +60,7 @@ interface Fight {
   name: string;
   keystoneLevel: number;
   kill: boolean;
+  friendlyPlayers: number[];
 }
 
 export async function getReports() {
@@ -63,17 +82,32 @@ export interface Parsed {
   level: number;
   pass: boolean;
   owner: string;
+  players: string[];
   url: string;
 }
 
+const ROLES = ["tanks", "healers", "dps"] as const;
+type Role = (typeof ROLES)[number];
+
 function parseReports(reports: Report[]): Parsed[] {
   return reports.flatMap((r) => {
+    const rPlayers = new Map<number, { role: Role; name: string }>();
+    for (const role of ROLES) {
+      for (const player of r.playerDetails.data.playerDetails[role]) {
+        rPlayers.set(player.id, { role: role, name: player.name });
+      }
+    }
+
     return r.fights.reverse().map((f) => {
       return {
         key: f.name,
         level: f.keystoneLevel,
         pass: f.kill ?? false,
         owner: r.owner.name,
+        players: f.friendlyPlayers
+          .map((p) => rPlayers.get(p)!)
+          .sort((a, b) => ROLES.indexOf(a.role) - ROLES.indexOf(b.role))
+          .map((p) => p.name),
         url: `https://www.warcraftlogs.com/reports/${r.code}#fight=${f.id}`,
       };
     });

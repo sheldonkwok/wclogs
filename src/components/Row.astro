@@ -1,7 +1,7 @@
 ---
 import type { Parsed } from "../pages/data.json";
 
-const { key, level, pass, owner, url } = Astro.props as Parsed;
+const { key, level, pass, players, url } = Astro.props as Parsed;
 
 const passColor = pass ? "pass" : "fail";
 ---
@@ -13,7 +13,7 @@ const passColor = pass ? "pass" : "fail";
     </a>
   </div>
 
-  <div class="owner">{owner}</div>
+  <div class="owner">{players.join(" ")}</div>
 </div>
 
 <style>
@@ -22,7 +22,7 @@ const passColor = pass ? "pass" : "fail";
     flex-direction: row;
     justify-content: space-between;
 
-    padding-bottom: 3px;
+    padding-bottom: 5px;
   }
   a {
     color: inherit;
@@ -38,5 +38,8 @@ const passColor = pass ? "pass" : "fail";
 
   .owner {
     color: #f4ebd0;
+    font-size: 0.7em;
+    margin-top: auto;
+    margin-bottom: auto;
   }
 </style>
