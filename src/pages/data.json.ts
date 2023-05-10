@@ -28,7 +28,7 @@ const query = gql`
             kill
             friendlyPlayers
             keystoneTime
-            endTime
+            startTime
           }
         }
       }
@@ -61,6 +61,7 @@ interface Fight {
   keystoneLevel: number;
   kill: boolean;
   friendlyPlayers: number[];
+  startTime: number;
 }
 
 export async function getReports() {
@@ -82,6 +83,7 @@ export interface Parsed {
   level: number;
   pass: boolean;
   owner: string;
+  date: number;
   players: string[];
   url: string;
 }
@@ -90,7 +92,7 @@ const ROLES = ["tanks", "healers", "dps"] as const;
 type Role = (typeof ROLES)[number];
 
 function parseReports(reports: Report[]): Parsed[] {
-  return reports.flatMap((r) => {
+  const allReports = reports.flatMap((r) => {
     const rPlayers = new Map<number, { role: Role; name: string }>();
     for (const role of ROLES) {
       for (const player of r.playerDetails.data.playerDetails[role]) {
@@ -104,6 +106,7 @@ function parseReports(reports: Report[]): Parsed[] {
         level: f.keystoneLevel,
         pass: f.kill ?? false,
         owner: r.owner.name,
+        date: r.startTime + f.startTime,
         players: f.friendlyPlayers
           .map((p) => rPlayers.get(p)!)
           .sort((a, b) => ROLES.indexOf(a.role) - ROLES.indexOf(b.role))
@@ -112,6 +115,36 @@ function parseReports(reports: Report[]): Parsed[] {
       };
     });
   });
+
+  return dedupReports(allReports);
+}
+
+const PREF_OWNER = "FMJustice";
+const MS_RANGE = 60 * 1000;
+function dedupReports(reports: Parsed[]): Parsed[] {
+  if (reports.length === 0) return [];
+  reports.sort((a, b) => b.date - a.date);
+
+  const cleaned = [reports[0]];
+
+  for (let i = 1; i < reports.length; i++) {
+    const prevIndex = cleaned.length - 1;
+    const curr = reports[i];
+    const prev = cleaned[prevIndex];
+
+    if (
+      curr.key === prev.key &&
+      curr.level === prev.level &&
+      MS_RANGE > Math.abs(curr.date - prev.date)
+    ) {
+      if (curr.owner === PREF_OWNER) continue;
+      cleaned[prevIndex] = curr;
+    } else {
+      cleaned.push(curr);
+    }
+  }
+
+  return cleaned;
 }
 
 let token = "";
