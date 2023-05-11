@@ -10,6 +10,8 @@ const gql = String.raw; // for syntax highlighting
 const GUILD_ID = 365689;
 const MYTHIC_DIFF = 10;
 const LIMIT = 20;
+const FIGHTS = `[${[...Array(100).keys()].join(" ")}]`;
+
 const query = gql`
   query {
     reportData {
@@ -20,7 +22,7 @@ const query = gql`
             name
           }
           startTime
-          playerDetails(fightIDs: [0,1,2,3,4,5,6,7,8,9,10])
+          playerDetails(fightIDs: ${FIGHTS})
           fights(difficulty: ${MYTHIC_DIFF}) {
             id
             name
@@ -108,7 +110,11 @@ function parseReports(reports: Report[]): Parsed[] {
         owner: r.owner.name,
         date: r.startTime + f.startTime,
         players: f.friendlyPlayers
-          .map((p) => rPlayers.get(p)!)
+          .map((p) => {
+            const rp = rPlayers.get(p);
+            if (!rp) return { role: "dps" as const, name: "?" };
+            return rp;
+          })
           .sort((a, b) => ROLES.indexOf(a.role) - ROLES.indexOf(b.role))
           .map((p) => p.name),
         url: `https://www.warcraftlogs.com/reports/${r.code}#fight=${f.id}`,
