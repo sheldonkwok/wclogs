@@ -2,7 +2,7 @@ const CLIENT_ID = import.meta.env.CLIENT_ID;
 const CLIENT_SECRET = import.meta.env.CLIENT_SECRET;
 
 export const get = async () => {
-  const reports = await getReports();
+  const reports = await getKeys();
   return { body: JSON.stringify(reports) };
 };
 
@@ -66,18 +66,30 @@ interface Fight {
   startTime: number;
 }
 
-export async function getReports() {
-  const data = await fetch("https://www.warcraftlogs.com/api/v2/client", {
+interface KeyData {
+  data: Parsed[];
+  time: number;
+}
+
+export async function getKeys(): Promise<KeyData> {
+  const start = Date.now();
+  const request = await fetch("https://www.warcraftlogs.com/api/v2/client", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${await getAuth()}`,
     },
     body: JSON.stringify({ query }),
-  }).then((r) => r.json());
+  });
 
-  const toParse = data.data.reportData.reports.data as Report[];
-  return parseReports(toParse);
+  const time = Date.now() - start;
+
+  const reqData = await request.json();
+  const toParse = reqData.data.reportData.reports.data as Report[];
+  return {
+    data: parseReports(toParse),
+    time,
+  };
 }
 
 export interface Parsed {

@@ -2,21 +2,33 @@
 import Layout from "../layouts/Layout.astro";
 import Row from "../components/Row.astro";
 
-import { getReports } from "../pages/data.json";
+import { getKeys } from "../pages/data.json";
 
-const data = await getReports();
+const { data, time } = await getKeys();
+const LIMIT = 15;
 ---
 
 <Layout>
   <main>
-    {data.map((d) => <Row {...d} />)}
+    {data.slice(0, LIMIT).map((d) => <Row {...d} />)}
+
+    <footer>WCL API: {time}ms</footer>
   </main>
 </Layout>
 
 <style>
   main {
     margin: auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 80vh;
     padding: 1.5rem;
     max-width: 60ch;
+  }
+
+  footer {
+    margin-top: auto;
+    color: #f4ebd0;
+    font-size: 0.7em;
   }
 </style>
