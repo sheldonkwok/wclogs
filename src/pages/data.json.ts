@@ -109,7 +109,10 @@ function parseReports(reports: Report[]): Parsed[] {
   const allReports = reports.flatMap((r) => {
     const rPlayers = new Map<number, { role: Role; name: string }>();
     for (const role of ROLES) {
-      for (const player of r.playerDetails.data.playerDetails[role]) {
+      const details = r.playerDetails.data.playerDetails;
+      if (Array.isArray(details)) continue; // Bad data
+
+      for (const player of details[role]) {
         rPlayers.set(player.id, { role: role, name: player.name });
       }
     }
