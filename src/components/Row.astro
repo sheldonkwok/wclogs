@@ -14,7 +14,16 @@ const keyExecution = timed ? "pass" : finished ? "fail" : "left";
     </a>
   </div>
 
-  <div class="owner">{players.join(" ")}</div>
+  <div class="players">
+    {
+      players.map((p, i) => (
+        <span class={p.type.toLowerCase()}>
+          {p.name}
+          {i < players.length - 1 ? " " : ""}{" "}
+        </span>
+      ))
+    }
+  </div>
 </div>
 
 <style>
@@ -41,10 +50,62 @@ const keyExecution = timed ? "pass" : finished ? "fail" : "left";
     text-decoration: line-through;
   }
 
-  .owner {
+  .players {
     color: #f4ebd0;
     font-size: 0.8em;
     margin-top: auto;
     margin-bottom: auto;
+  }
+
+  .deathknight {
+    color: #c41e3a;
+  }
+
+  .demonhunter {
+    color: #a330c9;
+  }
+
+  .druid {
+    color: #ff7c0a;
+  }
+
+  .evoker {
+    color: #33937f;
+  }
+
+  .hunter {
+    color: #aad372;
+  }
+
+  .mage {
+    color: #3fc7eb;
+  }
+
+  .monk {
+    color: #00ff98;
+  }
+
+  .paladin {
+    color: #f48cba;
+  }
+
+  .priest {
+    color: #ffffff;
+  }
+
+  .rogue {
+    color: #fff468;
+  }
+
+  .shaman {
+    color: #0070dd;
+  }
+
+  .warlock {
+    color: #8788ee;
+  }
+
+  .warrior {
+    color: #c69b6d;
   }
 </style>

@@ -1,5 +1,6 @@
 import type { Report } from "./types";
 
+type RPlayer = { role: Role; name: string; type: string };
 export interface Parsed {
   key: string;
   level: number;
@@ -8,23 +9,26 @@ export interface Parsed {
   time: string;
   owner: string;
   date: number;
-  players: string[];
+  players: RPlayer[];
   url: string;
 }
 
 const ROLES = ["tanks", "healers", "dps"] as const;
 type Role = (typeof ROLES)[number];
-type RPlayer = Map<number, { role: Role; name: string }>;
 
 export function parseReports(reports: Report[]): Parsed[] {
   const allReports = reports.flatMap((r) => {
-    const rPlayers = new Map<number, { role: Role; name: string }>();
+    const rPlayers = new Map<number, RPlayer>();
     for (const role of ROLES) {
       const details = r.playerDetails.data.playerDetails;
       if (Array.isArray(details)) continue; // Bad data
 
       for (const player of details[role]) {
-        rPlayers.set(player.id, { role: role, name: player.name });
+        rPlayers.set(player.id, {
+          role: role,
+          name: player.name,
+          type: player.type,
+        });
       }
     }
 
@@ -46,15 +50,17 @@ export function parseReports(reports: Report[]): Parsed[] {
   return dedupReports(allReports);
 }
 
-function findPlayers(rPlayers: RPlayer, playerIds: number[]): string[] {
+function findPlayers(
+  rPlayers: Map<number, RPlayer>,
+  playerIds: number[]
+): RPlayer[] {
   return playerIds
     .map((p) => {
       const rp = rPlayers.get(p);
-      if (!rp) return { role: "dps" as const, name: "?" };
+      if (!rp) return { role: "dps" as const, name: "?", type: "?" };
       return rp;
     })
-    .sort((a, b) => ROLES.indexOf(a.role) - ROLES.indexOf(b.role))
-    .map((p) => p.name);
+    .sort((a, b) => ROLES.indexOf(a.role) - ROLES.indexOf(b.role));
 }
 
 function formatTime(ms: number): string {

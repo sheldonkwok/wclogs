@@ -15,6 +15,7 @@ export interface PlayerDetails {
 export interface Player {
   id: number;
   name: string;
+  type: string;
 }
 
 export interface Fight {
