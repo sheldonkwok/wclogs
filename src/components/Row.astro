@@ -1,7 +1,8 @@
 ---
 import type { Parsed } from "../lib/parse";
 
-const { key, level, timed, finished, players, url } = Astro.props as Parsed;
+const { key, level, timed, finished, time, players, url } =
+  Astro.props as Parsed;
 
 const keyExecution = timed ? "pass" : finished ? "fail" : "left";
 ---
@@ -9,7 +10,7 @@ const keyExecution = timed ? "pass" : finished ? "fail" : "left";
 <div class="row">
   <div>
     <a class={keyExecution} href={url}>
-      {key} - {level}
+      {level} - {key} - {time === "00:00" ? "xx:xx" : time}
     </a>
   </div>
 
