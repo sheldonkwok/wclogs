@@ -1,3 +1,6 @@
+import { parseReports, Parsed } from "../lib/parse";
+import type { Report } from "../lib/types";
+
 const CLIENT_ID = import.meta.env.CLIENT_ID;
 const CLIENT_SECRET = import.meta.env.CLIENT_SECRET;
 
@@ -38,34 +41,6 @@ const query = gql`
   }
 `;
 
-interface Report {
-  code: string;
-  owner: { name: string };
-  startTime: number;
-  playerDetails: PlayerDetails;
-  fights: Fight[];
-}
-
-interface PlayerDetails {
-  data: {
-    playerDetails: { dps: Player[]; healers: Player[]; tanks: Player[] };
-  };
-}
-
-interface Player {
-  id: number;
-  name: string;
-}
-
-interface Fight {
-  id: number;
-  name: string;
-  keystoneLevel: number;
-  kill: boolean;
-  friendlyPlayers: number[];
-  startTime: number;
-}
-
 interface KeyData {
   data: Parsed[];
   time: number;
@@ -82,90 +57,13 @@ export async function getKeys(): Promise<KeyData> {
     body: JSON.stringify({ query }),
   });
 
-  const time = Date.now() - start;
-
   const reqData = await request.json();
   const toParse = reqData.data.reportData.reports.data as Report[];
-  return {
-    data: parseReports(toParse),
-    time,
-  };
-}
 
-export interface Parsed {
-  key: string;
-  level: number;
-  pass: boolean;
-  owner: string;
-  date: number;
-  players: string[];
-  url: string;
-}
+  const time = Date.now() - start;
+  const data = parseReports(toParse);
 
-const ROLES = ["tanks", "healers", "dps"] as const;
-type Role = (typeof ROLES)[number];
-
-function parseReports(reports: Report[]): Parsed[] {
-  const allReports = reports.flatMap((r) => {
-    const rPlayers = new Map<number, { role: Role; name: string }>();
-    for (const role of ROLES) {
-      const details = r.playerDetails.data.playerDetails;
-      if (Array.isArray(details)) continue; // Bad data
-
-      for (const player of details[role]) {
-        rPlayers.set(player.id, { role: role, name: player.name });
-      }
-    }
-
-    return r.fights.reverse().map((f) => {
-      return {
-        key: f.name,
-        level: f.keystoneLevel,
-        pass: f.kill ?? false,
-        owner: r.owner.name,
-        date: r.startTime + f.startTime,
-        players: f.friendlyPlayers
-          .map((p) => {
-            const rp = rPlayers.get(p);
-            if (!rp) return { role: "dps" as const, name: "?" };
-            return rp;
-          })
-          .sort((a, b) => ROLES.indexOf(a.role) - ROLES.indexOf(b.role))
-          .map((p) => p.name),
-        url: `https://www.warcraftlogs.com/reports/${r.code}#fight=${f.id}`,
-      };
-    });
-  });
-
-  return dedupReports(allReports);
-}
-
-const PREF_OWNER = "FMJustice";
-const MS_RANGE = 60 * 1000;
-function dedupReports(reports: Parsed[]): Parsed[] {
-  if (reports.length === 0) return [];
-  reports.sort((a, b) => b.date - a.date);
-
-  const cleaned = [reports[0]];
-
-  for (let i = 1; i < reports.length; i++) {
-    const prevIndex = cleaned.length - 1;
-    const curr = reports[i];
-    const prev = cleaned[prevIndex];
-
-    if (
-      curr.key === prev.key &&
-      curr.level === prev.level &&
-      MS_RANGE > Math.abs(curr.date - prev.date)
-    ) {
-      if (curr.owner === PREF_OWNER) continue;
-      cleaned[prevIndex] = curr;
-    } else {
-      cleaned.push(curr);
-    }
-  }
-
-  return cleaned;
+  return { data, time };
 }
 
 let token = "";

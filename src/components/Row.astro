@@ -1,14 +1,14 @@
 ---
-import type { Parsed } from "../pages/data.json";
+import type { Parsed } from "../lib/parse";
 
-const { key, level, pass, players, url } = Astro.props as Parsed;
+const { key, level, timed, finished, players, url } = Astro.props as Parsed;
 
-const passColor = pass ? "pass" : "fail";
+const keyExecution = timed ? "pass" : finished ? "fail" : "left";
 ---
 
 <div class="row">
   <div>
-    <a class={passColor} href={url}>
+    <a class={keyExecution} href={url}>
       {key} - {level}
     </a>
   </div>
@@ -34,6 +34,10 @@ const passColor = pass ? "pass" : "fail";
   }
   .fail {
     color: darkred;
+  }
+  .left {
+    color: darkred;
+    text-decoration: line-through;
   }
 
   .owner {
