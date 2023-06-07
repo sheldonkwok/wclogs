@@ -8,9 +8,17 @@ export interface Report {
 
 export interface PlayerDetails {
   data: {
-    playerDetails: { dps: Player[]; healers: Player[]; tanks: Player[] };
+    playerDetails: PlayerRoleDetails;
   };
 }
+
+export interface PlayerRoleDetails {
+  dps: Player[];
+  healers: Player[];
+  tanks: Player[];
+}
+
+export type Role = keyof PlayerRoleDetails;
 
 export interface Player {
   id: number;

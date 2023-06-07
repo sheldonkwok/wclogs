@@ -17,10 +17,10 @@ const keyExecution = timed ? "pass" : finished ? "fail" : "left";
   <div class="players">
     {
       players.map((p, i) => (
-        <span class={p.type.toLowerCase()}>
+        <a class={p.type.toLowerCase()} href={p.rioUrl}>
           {p.name}
           {i < players.length - 1 ? " " : ""}{" "}
-        </span>
+        </a>
       ))
     }
   </div>

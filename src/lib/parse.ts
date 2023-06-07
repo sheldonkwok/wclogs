@@ -1,6 +1,12 @@
-import type { Report } from "./types";
+import type { Report, PlayerRoleDetails, Role } from "./types";
 
-type RPlayer = { role: Role; name: string; type: string };
+export interface RPlayer {
+  role: Role;
+  name: string;
+  type: string;
+  rioUrl: string;
+}
+
 export interface Parsed {
   key: string;
   level: number;
@@ -13,24 +19,11 @@ export interface Parsed {
   url: string;
 }
 
-const ROLES = ["tanks", "healers", "dps"] as const;
-type Role = (typeof ROLES)[number];
+const ROLES = ["tanks", "healers", "dps"] as Role[];
 
 export function parseReports(reports: Report[]): Parsed[] {
   const allReports = reports.flatMap((r) => {
-    const rPlayers = new Map<number, RPlayer>();
-    for (const role of ROLES) {
-      const details = r.playerDetails.data.playerDetails;
-      if (Array.isArray(details)) continue; // Bad data
-
-      for (const player of details[role]) {
-        rPlayers.set(player.id, {
-          role: role,
-          name: player.name,
-          type: player.type,
-        });
-      }
-    }
+    const rPlayers = parsePlayerDetails(r.playerDetails.data.playerDetails);
 
     return r.fights.reverse().map((f) => {
       return {
@@ -50,6 +43,32 @@ export function parseReports(reports: Report[]): Parsed[] {
   return dedupReports(allReports);
 }
 
+function parsePlayerDetails(details: PlayerRoleDetails): Map<number, RPlayer> {
+  const rPlayers = new Map<number, RPlayer>();
+
+  for (const role of ROLES) {
+    if (Array.isArray(details)) continue; // Bad data
+
+    for (const player of details[role]) {
+      rPlayers.set(player.id, {
+        role: role,
+        name: player.name,
+        type: player.type,
+        rioUrl: `https://raider.io/characters/us/${player.server}/${player.name}`,
+      });
+    }
+  }
+
+  return rPlayers;
+}
+
+const UNKNOWN_PLAYER = Object.freeze({
+  role: "dps" as const,
+  name: "?",
+  type: "?",
+  rioUrl: "",
+});
+
 function findPlayers(
   rPlayers: Map<number, RPlayer>,
   playerIds: number[]
@@ -57,7 +76,8 @@ function findPlayers(
   return playerIds
     .map((p) => {
       const rp = rPlayers.get(p);
-      if (!rp) return { role: "dps" as const, name: "?", type: "?" };
+      if (!rp) return UNKNOWN_PLAYER;
+
       return rp;
     })
     .sort((a, b) => ROLES.indexOf(a.role) - ROLES.indexOf(b.role));
