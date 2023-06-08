@@ -1,16 +1,24 @@
 ---
 import type { RPlayer } from "../lib/parse";
+import type { Role } from "../lib/types";
 
 const { players } = Astro.props as { players: RPlayer[] };
+
+function showImg(role: Role, index: number): boolean {
+	if (role !== 'dps') return true;
+	return index === 0;
+}
 ---
 
 <div class="players">
 	{
 		players.map((p, i) => (
-			<a class={p.type.toLowerCase()} href={p.rioUrl}>
-				{p.name}
-				{i < players.length - 1 ? " " : ""}
-			</a>
+			<>
+				{showImg(p.role, i) ? <img class="role-img" src=`${p.role}.webp` /> : <></>}
+				<a class={p.type.toLowerCase()} href={p.rioUrl}>
+					{p.name}
+				</a>
+			</>
 		))
 	}
 </div>
@@ -19,6 +27,17 @@ const { players } = Astro.props as { players: RPlayer[] };
 	a {
 		color: inherit;
 		text-decoration: none;
+		padding-right: 0.3em;
+	}
+
+  a:last-of-type {
+    padding-right: 0em;
+  }
+
+	.role-img {
+		height: 1em;
+		width: auto;
+		padding-right: 0.2em;
 	}
 
 	.players {
@@ -26,6 +45,10 @@ const { players } = Astro.props as { players: RPlayer[] };
 		font-size: 0.8em;
 		margin-top: auto;
 		margin-bottom: auto;
+
+		display: flex;
+		text-align: center;
+		align-items: center;
 	}
 
 	.deathknight {
