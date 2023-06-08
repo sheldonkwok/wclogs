@@ -1,0 +1,82 @@
+---
+import type { RPlayer } from "../lib/parse";
+
+const { players } = Astro.props as { players: RPlayer[] };
+---
+
+<div class="players">
+	{
+		players.map((p, i) => (
+			<a class={p.type.toLowerCase()} href={p.rioUrl}>
+				{p.name}
+				{i < players.length - 1 ? " " : ""}{" "}
+			</a>
+		))
+	}
+</div>
+
+<style>
+	a {
+		color: inherit;
+		text-decoration: none;
+	}
+
+	.players {
+		color: #f4ebd0;
+		font-size: 0.8em;
+		margin-top: auto;
+		margin-bottom: auto;
+	}
+
+	.deathknight {
+		color: #c41e3a;
+	}
+
+	.demonhunter {
+		color: #a330c9;
+	}
+
+	.druid {
+		color: #ff7c0a;
+	}
+
+	.evoker {
+		color: #33937f;
+	}
+
+	.hunter {
+		color: #aad372;
+	}
+
+	.mage {
+		color: #3fc7eb;
+	}
+
+	.monk {
+		color: #00ff98;
+	}
+
+	.paladin {
+		color: #f48cba;
+	}
+
+	.priest {
+		color: #ffffff;
+	}
+
+	.rogue {
+		color: #fff468;
+	}
+
+	.shaman {
+		color: #0070dd;
+	}
+
+	.warlock {
+		color: #8788ee;
+	}
+
+	.warrior {
+		color: #c69b6d;
+	}
+</style>
