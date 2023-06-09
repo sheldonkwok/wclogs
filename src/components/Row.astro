@@ -2,7 +2,7 @@
 import type { Parsed } from "../lib/parse";
 import Players from "./Players.astro";
 
-const { key, level, timed, finished, timeDiff, players, url } =
+const { key, keyAbbrev, level, timed, finished, timeDiff, players, url } =
   Astro.props as Parsed;
 
 const keyExecution = timed ? "pass" : finished ? "fail" : "left";
@@ -13,7 +13,8 @@ const dps = players.slice(2);
 
 <div class="row">
   <div class="subRow" style={{ paddingBottom: "0.2em" }}>
-    <div>
+    <div class="subRow">
+      <img src=`images/keys/${keyAbbrev}.jpeg` />
       <a href={url}>
         {key}
       </a>
@@ -30,6 +31,17 @@ const dps = players.slice(2);
 </div>
 
 <style>
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  img {
+    height: 1em;
+    width: auto;
+    padding-right: 0.3em;
+  }
+
   .row {
     padding-bottom: 0.5em;
     padding-top: 0.4em;
@@ -43,16 +55,14 @@ const dps = players.slice(2);
     display: flex;
     flex-direction: row;
     justify-content: space-between;
+    text-align: center;
+    align-items: center;
 
     color: #f4ebd0;
   }
 
   .timer {
     font-size: 0.9em;
-  }
-  a {
-    color: inherit;
-    text-decoration: none;
   }
 
   .pass {

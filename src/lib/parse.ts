@@ -1,5 +1,21 @@
 import type { Report, PlayerRoleDetails, Role } from "./types";
 
+export interface KeyInfo {
+  abbrev: string;
+  timer: number;
+}
+const MIN = 60_000;
+const S2_KEYS = new Map<string, KeyInfo>([
+  ["Uldaman: Legacy of Tyr", { abbrev: "uld", timer: 35 * MIN }],
+  ["Neltharus", { abbrev: "nelt", timer: 33 * MIN }],
+  ["Brackenhide Hollow", { abbrev: "bh", timer: 35 * MIN }],
+  ["Halls of Infusion", { abbrev: "hoi", timer: 35 * MIN }],
+  ["Vortex Pinnacle", { abbrev: "vp", timer: 30 * MIN }],
+  ["Freehold", { abbrev: "fh", timer: 30 * MIN }],
+  ["The Underrot", { abbrev: "undr", timer: 30 * MIN }],
+  ["Neltharion's Lair", { abbrev: "nl", timer: 33 * MIN }],
+]);
+
 export interface RPlayer {
   role: Role;
   name: string;
@@ -9,6 +25,7 @@ export interface RPlayer {
 
 export interface Parsed {
   key: string;
+  keyAbbrev: string;
   level: number;
   finished: boolean;
   timed: boolean;
@@ -30,6 +47,7 @@ export function parseReports(reports: Report[]): Parsed[] {
       const { timed, diff } = parseTime(f.name, f.keystoneTime);
       return {
         key: f.name,
+        keyAbbrev: S2_KEYS.get(f.name)?.abbrev ?? "",
         level: f.keystoneLevel,
         finished: f.kill ?? false,
         time: formatTime(f.keystoneTime),
@@ -90,18 +108,6 @@ function formatTime(ms: number): string {
   return new Date(ms).toISOString().slice(14, 19);
 }
 
-const MIN = 60_000;
-const S2_TIMES = new Map([
-  ["Uldaman: Legacy of Tyr", 35 * MIN],
-  ["Neltharus", 33 * MIN],
-  ["Brackenhide Hollow", 35 * MIN],
-  ["Halls of Infusion", 35 * MIN],
-  ["Vortex Pinnacle", 30 * MIN],
-  ["Freehold", 30 * MIN],
-  ["The Underrot", 30 * MIN],
-  ["Neltharion's Lair", 33 * MIN],
-]);
-
 const DEFAULT_TIME = Object.freeze({ timed: false, diff: "xx:xx" });
 function parseTime(
   name: string,
@@ -109,7 +115,7 @@ function parseTime(
 ): { timed: boolean; diff: string } {
   if (!time) return DEFAULT_TIME;
 
-  const timer = S2_TIMES.get(name);
+  const timer = S2_KEYS.get(name)?.timer;
   if (!timer) return DEFAULT_TIME;
 
   const timed = time < timer;
