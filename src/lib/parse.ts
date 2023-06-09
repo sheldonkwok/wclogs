@@ -98,7 +98,7 @@ const S2_TIMES = new Map([
   ["Halls of Infusion", 35 * MIN],
   ["Vortex Pinnacle", 30 * MIN],
   ["Freehold", 30 * MIN],
-  ["Underrot", 30 * MIN],
+  ["The Underrot", 30 * MIN],
   ["Neltharion's Lair", 33 * MIN],
 ]);
 
