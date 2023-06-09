@@ -13,6 +13,7 @@ export interface Parsed {
   finished: boolean;
   timed: boolean;
   time: string;
+  timeDiff: string;
   owner: string;
   date: number;
   players: RPlayer[];
@@ -26,12 +27,14 @@ export function parseReports(reports: Report[]): Parsed[] {
     const rPlayers = parsePlayerDetails(r.playerDetails.data.playerDetails);
 
     return r.fights.reverse().map((f) => {
+      const { timed, diff } = parseTime(f.name, f.keystoneTime);
       return {
         key: f.name,
         level: f.keystoneLevel,
         finished: f.kill ?? false,
-        timed: passed(f.name, f.keystoneTime),
         time: formatTime(f.keystoneTime),
+        timed,
+        timeDiff: diff,
         owner: r.owner.name,
         date: r.startTime + f.startTime,
         players: findPlayers(rPlayers, f.friendlyPlayers),
@@ -99,13 +102,21 @@ const S2_TIMES = new Map([
   ["Neltharion's Lair", 33 * MIN],
 ]);
 
-function passed(name: string, time: number): boolean {
-  if (!time) return false;
+const DEFAULT_TIME = Object.freeze({ timed: false, diff: "xx:xx" });
+function parseTime(
+  name: string,
+  time: number
+): { timed: boolean; diff: string } {
+  if (!time) return DEFAULT_TIME;
 
   const timer = S2_TIMES.get(name);
-  if (!timer) return false;
+  if (!timer) return DEFAULT_TIME;
 
-  return time < timer;
+  const timed = time < timer;
+  const absDiff = formatTime(Math.abs(timer - time));
+  const diff = `${timed ? "-" : "+"}${absDiff}`;
+
+  return { timed, diff };
 }
 
 const PREF_OWNER = "FMJustice";

@@ -2,7 +2,7 @@
 import type { Parsed } from "../lib/parse";
 import Players from "./Players.astro";
 
-const { key, level, timed, finished, time, players, url } =
+const { key, level, timed, finished, timeDiff, players, url } =
   Astro.props as Parsed;
 
 const keyExecution = timed ? "pass" : finished ? "fail" : "left";
@@ -14,15 +14,17 @@ const dps = players.slice(2);
 <div class="row">
   <div class="subRow" style={{ paddingBottom: "0.2em" }}>
     <div>
-      <a class={keyExecution} href={url}>
-        {key} - {level}
+      <a href={url}>
+        {key}
       </a>
     </div>
     <Players players={healerTank} />
   </div>
 
   <div class="subRow">
-    <div class="timer">{time === "00:00" ? "xx:xx" : time}</div>
+    <div class:list={["timer", keyExecution]}>
+      {level} | {timeDiff}
+    </div>
     <Players players={dps} />
   </div>
 </div>

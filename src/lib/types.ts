@@ -24,6 +24,7 @@ export interface Player {
   id: number;
   name: string;
   type: string;
+  server: string;
 }
 
 export interface Fight {
