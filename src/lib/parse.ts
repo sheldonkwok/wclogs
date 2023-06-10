@@ -10,7 +10,7 @@ const S2_KEYS = new Map<string, KeyInfo>([
   ["Neltharus", { abbrev: "nelt", timer: 33 * MIN }],
   ["Brackenhide Hollow", { abbrev: "bh", timer: 35 * MIN }],
   ["Halls of Infusion", { abbrev: "hoi", timer: 35 * MIN }],
-  ["Vortex Pinnacle", { abbrev: "vp", timer: 30 * MIN }],
+  ["The Vortex Pinnacle", { abbrev: "vp", timer: 30 * MIN }],
   ["Freehold", { abbrev: "fh", timer: 30 * MIN }],
   ["The Underrot", { abbrev: "undr", timer: 30 * MIN }],
   ["Neltharion's Lair", { abbrev: "nl", timer: 33 * MIN }],
