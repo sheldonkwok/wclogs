@@ -31,6 +31,7 @@ export interface Fight {
   id: number;
   name: string;
   keystoneLevel: number;
+  keystoneAffixes: number[];
   kill: boolean;
   friendlyPlayers: number[];
   startTime: number;

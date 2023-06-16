@@ -2,7 +2,7 @@
 import type { Parsed } from "../lib/parse";
 import Players from "./Players.astro";
 
-const { key, keyAbbrev, level, timed, finished, timeDiff, players, url } =
+const { key, keyAbbrev, level, affixes, timed, finished, timeDiff, players, url } =
   Astro.props as Parsed;
 
 const keyExecution = timed ? "pass" : finished ? "fail" : "left";
@@ -23,8 +23,10 @@ const dps = players.slice(2);
   </div>
 
   <div class="subRow">
-    <div class:list={["timer", keyExecution]}>
-      {level} | {timeDiff}
+    <div class="subRow">
+      <span>{level}</span>
+      <span class:list={["timer", keyExecution]}>{timeDiff}</span>
+      {affixes.map(a => <img src =`images/affixes/${a}.jpeg`>)} 
     </div>
     <Players players={dps} />
   </div>
@@ -63,6 +65,8 @@ const dps = players.slice(2);
 
   .timer {
     font-size: 0.9em;
+    padding-left: 0.3em;
+    padding-right: 0.3em;
   }
 
   .pass {

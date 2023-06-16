@@ -30,6 +30,7 @@ const query = gql`
             id
             name
             keystoneLevel
+            keystoneAffixes
             kill
             friendlyPlayers
             keystoneTime

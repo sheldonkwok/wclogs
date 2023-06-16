@@ -16,6 +16,46 @@ const S2_KEYS = new Map<string, KeyInfo>([
   ["Neltharion's Lair", { abbrev: "nl", timer: 33 * MIN }],
 ]);
 
+// Since I'm downloading image manually, I'm assuming these ids hold consistent
+const AFFIXES = {
+  "1": "overflowing",
+  "2": "skittish",
+  "3": "volcanic",
+  "4": "necrotic",
+  "5": "teeming",
+  "6": "raging",
+  "7": "bolstering",
+  "8": "sanguine",
+  "9": "tyrannical",
+  "10": "fortified",
+  "11": "bursting",
+  "12": "grievous",
+  "13": "explosive",
+  "14": "quaking",
+  "15": "relentless",
+  "16": "infested",
+  "117": "reaping",
+  "119": "beguiling",
+  "120": "awakened",
+  "121": "prideful",
+  "122": "inspiring",
+  "123": "spiteful",
+  "124": "storming",
+  "128": "tormented",
+  "129": "infernal",
+  "130": "encrypted",
+  "131": "shrouded",
+  "132": "thundering",
+  "134": "entangling",
+  "135": "afflicted",
+  "136": "incorporeal",
+  "137": "shielding",
+};
+
+const AFFIX_MAP = new Map<number, string>(
+  Object.entries(AFFIXES).map(([key, val]) => [Number(key), val])
+);
+
 export interface RPlayer {
   role: Role;
   name: string;
@@ -27,6 +67,7 @@ export interface Parsed {
   key: string;
   keyAbbrev: string;
   level: number;
+  affixes: string[];
   finished: boolean;
   timed: boolean;
   time: string;
@@ -49,6 +90,7 @@ export function parseReports(reports: Report[]): Parsed[] {
         key: f.name,
         keyAbbrev: S2_KEYS.get(f.name)?.abbrev ?? "",
         level: f.keystoneLevel,
+        affixes: f.keystoneAffixes.map((a) => AFFIX_MAP.get(a) ?? "unknown"),
         finished: f.kill ?? false,
         time: formatTime(f.keystoneTime),
         timed,
