@@ -6,7 +6,7 @@ export interface KeyInfo {
 }
 const MIN = 60_000;
 const S2_KEYS = new Map<string, KeyInfo>([
-  ["Uldaman: Legacy of Tyr", { abbrev: "uld", timer: 35 * MIN }],
+  ["Uldaman", { abbrev: "uld", timer: 35 * MIN }],
   ["Neltharus", { abbrev: "nelt", timer: 33 * MIN }],
   ["Brackenhide Hollow", { abbrev: "bh", timer: 35 * MIN }],
   ["Halls of Infusion", { abbrev: "hoi", timer: 35 * MIN }],
