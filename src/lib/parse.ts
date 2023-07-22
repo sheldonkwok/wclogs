@@ -112,7 +112,10 @@ function parsePlayerDetails(details: PlayerRoleDetails): Map<number, RPlayer> {
   for (const role of ROLES) {
     if (Array.isArray(details)) continue; // Bad data
 
-    for (const player of details[role]) {
+    const playerRoles = details[role];
+    if (!playerRoles) continue;
+
+    for (const player of playerRoles) {
       rPlayers.set(player.id, {
         role: role,
         name: player.name,
@@ -132,18 +135,36 @@ const UNKNOWN_PLAYER = Object.freeze({
   rioUrl: "",
 });
 
+// The API can mix up runs if the party is filled in another run
 function findPlayers(
   rPlayers: Map<number, RPlayer>,
   playerIds: number[]
 ): RPlayer[] {
-  return playerIds
+  let hasTank = false;
+  let hasHealer = false;
+
+  const found =  playerIds
+    .sort((a, b) => a - b)
     .map((p) => {
       const rp = rPlayers.get(p);
       if (!rp) return UNKNOWN_PLAYER;
 
       return rp;
     })
+    .filter(rp => {
+      if (rp.role === 'tanks') {
+        if (hasTank) return false;
+        hasTank = true;
+      } else if (rp.role === 'healers') {
+        if (hasHealer) return false;
+        hasHealer = true;
+      }
+
+      return true;
+    })
     .sort((a, b) => ROLES.indexOf(a.role) - ROLES.indexOf(b.role));
+
+  return found.slice(0, 5);
 }
 
 function formatTime(ms: number): string {
