@@ -1,4 +1,7 @@
-import type { Report, PlayerRoleDetails, Role } from "./types";
+import * as apiV2 from "./api-v2";
+
+export type { Role } from "./api-v2";
+const ROLES = apiV2.ROLES;
 
 export interface KeyInfo {
   abbrev: string;
@@ -57,7 +60,7 @@ const AFFIX_MAP = new Map<number, string>(
 );
 
 export interface RPlayer {
-  role: Role;
+  role: apiV2.Role;
   name: string;
   type: string;
   rioUrl: string;
@@ -78,21 +81,39 @@ export interface Parsed {
   url: string;
 }
 
-const ROLES = ["tanks", "healers", "dps"] as Role[];
+export interface KeyData {
+  data: Parsed[];
+  time: number;
+}
 
-export function parseReports(reports: Report[]): Parsed[] {
+export async function getKeys(): Promise<KeyData> {
+  const start = Date.now();
+
+  const toParse = await apiV2.getReports();
+
+  const time = Date.now() - start;
+  const data = parseReports(toParse);
+
+  return { data, time };
+}
+
+export function parseReports(reports: apiV2.Report[]): Parsed[] {
   const allReports = reports.flatMap((r) => {
+    if (Array.isArray(r.playerDetails.data.playerDetails)) return []; // Bad data
+
     const rPlayers = parsePlayerDetails(r.playerDetails.data.playerDetails);
 
     return r.fights.reverse().map((f) => {
-      const { timed, diff } = parseTime(f.name, f.keystoneTime);
+      const keyTime = f.keystoneTime ?? 0;
+      const { timed, diff } = parseTime(f.name, keyTime);
+
       return {
         key: f.name,
         keyAbbrev: S2_KEYS.get(f.name)?.abbrev ?? "",
         level: f.keystoneLevel,
         affixes: f.keystoneAffixes.map((a) => AFFIX_MAP.get(a) ?? "unknown"),
         finished: f.kill ?? false,
-        time: formatTime(f.keystoneTime),
+        time: formatTime(keyTime),
         timed,
         timeDiff: diff,
         owner: r.owner.name,
@@ -103,15 +124,15 @@ export function parseReports(reports: Report[]): Parsed[] {
     });
   });
 
-  return dedupReports(allReports);
+  return cleanReports(allReports);
 }
 
-function parsePlayerDetails(details: PlayerRoleDetails): Map<number, RPlayer> {
+function parsePlayerDetails(
+  details: apiV2.PlayerRoleDetails
+): Map<number, RPlayer> {
   const rPlayers = new Map<number, RPlayer>();
 
   for (const role of ROLES) {
-    if (Array.isArray(details)) continue; // Bad data
-
     const playerRoles = details[role];
     if (!playerRoles) continue;
 
@@ -143,7 +164,7 @@ function findPlayers(
   let hasTank = false;
   let hasHealer = false;
 
-  const found =  playerIds
+  const found = playerIds
     .sort((a, b) => a - b)
     .map((p) => {
       const rp = rPlayers.get(p);
@@ -151,11 +172,11 @@ function findPlayers(
 
       return rp;
     })
-    .filter(rp => {
-      if (rp.role === 'tanks') {
+    .filter((rp) => {
+      if (rp.role === "tanks") {
         if (hasTank) return false;
         hasTank = true;
-      } else if (rp.role === 'healers') {
+      } else if (rp.role === "healers") {
         if (hasHealer) return false;
         hasHealer = true;
       }
@@ -190,8 +211,9 @@ function parseTime(
 
 const PREF_OWNER = "FMJustice";
 const MS_RANGE = 60 * 1000;
-function dedupReports(reports: Parsed[]): Parsed[] {
+function cleanReports(reports: Parsed[]): Parsed[] {
   if (reports.length === 0) return [];
+
   reports.sort((a, b) => b.date - a.date);
 
   const cleaned = [reports[0]];

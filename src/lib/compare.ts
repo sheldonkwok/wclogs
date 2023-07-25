@@ -1,6 +1,6 @@
 import * as apiV1 from "./api-v1";
 
-interface ClassSpecIds {
+export interface ClassSpecIds {
   class: number;
   spec: number;
 }

@@ -2,7 +2,7 @@
 import Layout from "../layouts/Layout.astro";
 import Row from "../components/Row.astro";
 
-import { getKeys } from "../pages/data.json";
+import { getKeys } from "../lib/keys";
 
 const { data, time } = await getKeys();
 const LIMIT = 15;

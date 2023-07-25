@@ -1,13 +1,8 @@
-import { parseReports, Parsed } from "../lib/parse";
-import type { Report } from "../lib/types";
+import { z } from "zod";
 
 const CLIENT_ID = import.meta.env.CLIENT_ID;
 const CLIENT_SECRET = import.meta.env.CLIENT_SECRET;
-
-export const get = async () => {
-  const reports = await getKeys();
-  return { body: JSON.stringify(reports) };
-};
+const TOKEN = await getAuth();
 
 const gql = String.raw; // for syntax highlighting
 const GUILD_ID = 365689;
@@ -42,36 +37,71 @@ const query = gql`
   }
 `;
 
-interface KeyData {
-  data: Parsed[];
-  time: number;
-}
+const ZPlayer = z.object({
+  id: z.number(),
+  name: z.string(),
+  type: z.string(),
+  icon: z.string(),
+  server: z.string(),
+});
 
-export async function getKeys(): Promise<KeyData> {
-  const start = Date.now();
+const ZPlayerRoleDetails = z.object({
+  tanks: z.array(ZPlayer).optional(),
+  healers: z.array(ZPlayer).optional(),
+  dps: z.array(ZPlayer).optional(),
+});
+
+export type PlayerRoleDetails = z.infer<typeof ZPlayerRoleDetails>;
+
+const ZRole = ZPlayerRoleDetails.keyof();
+export const ROLES = ZRole.options;
+export type Role = z.infer<typeof ZRole>;
+
+const ZPlayerDetails = z.object({
+  data: z.object({
+    playerDetails: z.union([ZPlayerRoleDetails, z.array(z.null())]),
+  }),
+});
+
+const ZFight = z.object({
+  id: z.number(),
+  name: z.string(),
+  keystoneLevel: z.number(),
+  keystoneAffixes: z.array(z.number()),
+  kill: z.boolean(),
+  friendlyPlayers: z.array(z.number()),
+  startTime: z.number(),
+  keystoneTime: z.number().nullable(),
+});
+
+const ZReport = z.object({
+  code: z.string(),
+  owner: z.object({ name: z.string() }),
+  startTime: z.number(),
+  playerDetails: ZPlayerDetails,
+  fights: z.array(ZFight),
+});
+
+export type Report = z.infer<typeof ZReport>;
+
+const ZReportArr = z.array(ZReport);
+
+export async function getReports(): Promise<z.infer<typeof ZReportArr>> {
   const request = await fetch("https://www.warcraftlogs.com/api/v2/client", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${await getAuth()}`,
+      Authorization: `Bearer ${TOKEN}`,
     },
     body: JSON.stringify({ query }),
   });
 
   const reqData = await request.json();
-  const toParse = reqData.data.reportData.reports.data as Report[];
-
-  const time = Date.now() - start;
-  const data = parseReports(toParse);
-
-  return { data, time };
+  return ZReportArr.parse(reqData.data.reportData.reports.data);
 }
 
-let token = "";
 // The default expiration is a year so we assume this gets evicted within that period
 async function getAuth(): Promise<string> {
-  if (token) return token;
-
   const res = await fetch("https://www.warcraftlogs.com/oauth/token", {
     method: "POST",
     headers: {
@@ -83,6 +113,5 @@ async function getAuth(): Promise<string> {
   if (!res.ok) throw new Error("Error fetching auth");
   const { access_token } = await res.json();
 
-  token = access_token;
-  return token;
+  return access_token;
 }
