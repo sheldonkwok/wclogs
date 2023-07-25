@@ -1,8 +1,54 @@
 import * as apiV1 from "./api-v1";
 
+export interface CompareURLInput {
+  reportId: string;
+  fightId: number;
+  mainAffix: number;
+  encounterId: number;
+  classSpec: string;
+}
+
+export async function getCompareURL({
+  reportId,
+  fightId,
+  mainAffix,
+  encounterId,
+  classSpec,
+}: CompareURLInput): Promise<string> {
+  const { classId, specId } = CLASSES[classSpec];
+
+  const best = await getBestReport({ mainAffix, encounterId, classId, specId });
+
+  return `https://www.warcraftlogs.com/reports/compare/${reportId}/${best.reportID}#fight=${fightId},${best.fightID}`;
+}
+
+export interface RankingsInput {
+  mainAffix: number;
+  encounterId: number;
+  classId: number;
+  specId: number;
+}
+
+export async function getBestReport({
+  mainAffix,
+  encounterId,
+  classId,
+  specId,
+}: RankingsInput): Promise<apiV1.Ranking> {
+  const { rankings } = await apiV1.getRankings(encounterId, classId, specId);
+
+  const best = rankings
+    .filter((k) => k.affixes.includes(mainAffix))
+    .sort((a, b) => b.score - a.score);
+
+  return best[0];
+}
+
+const CLASSES = await getClassSpec();
+
 export interface ClassSpecIds {
-  class: number;
-  spec: number;
+  classId: number;
+  specId: number;
 }
 
 async function getClassSpec(): Promise<Record<string, ClassSpecIds>> {
@@ -14,11 +60,9 @@ async function getClassSpec(): Promise<Record<string, ClassSpecIds>> {
 
     for (const sp of cl.specs) {
       const key = `${name}-${sp.name.replace(/\s/g, "")}`;
-      out[key] = { class: cl.id, spec: sp.id };
+      out[key] = { classId: cl.id, specId: sp.id };
     }
   }
 
   return out;
 }
-
-export const CLASSES = await getClassSpec();

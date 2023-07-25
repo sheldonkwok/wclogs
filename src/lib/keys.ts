@@ -6,18 +6,25 @@ const ROLES = apiV2.ROLES;
 export interface KeyInfo {
   abbrev: string;
   timer: number;
+  encounterId: number;
 }
 const MIN = 60_000;
 const S2_KEYS = new Map<string, KeyInfo>([
-  ["Uldaman", { abbrev: "uld", timer: 35 * MIN }],
-  ["Neltharus", { abbrev: "nelt", timer: 33 * MIN }],
-  ["Brackenhide Hollow", { abbrev: "bh", timer: 35 * MIN }],
-  ["Halls of Infusion", { abbrev: "hoi", timer: 35 * MIN }],
-  ["The Vortex Pinnacle", { abbrev: "vp", timer: 30 * MIN }],
-  ["Freehold", { abbrev: "fh", timer: 30 * MIN }],
-  ["The Underrot", { abbrev: "undr", timer: 30 * MIN }],
-  ["Neltharion's Lair", { abbrev: "nl", timer: 33 * MIN }],
+  ["Uldaman", { abbrev: "uld", timer: 35 * MIN, encounterId: 12451 }],
+  ["Brackenhide Hollow", { abbrev: "bh", timer: 35 * MIN, encounterId: 12520 }],
+  ["Neltharus", { abbrev: "nelt", timer: 33 * MIN, encounterId: 12519 }],
+  ["Halls of Infusion", { abbrev: "hoi", timer: 35 * MIN, encounterId: 12527 }],
+  [
+    "The Vortex Pinnacle",
+    { abbrev: "vp", timer: 30 * MIN, encounterId: 10657 },
+  ],
+  ["Freehold", { abbrev: "fh", timer: 30 * MIN, encounterId: 61754 }],
+  ["The Underrot", { abbrev: "undr", timer: 30 * MIN, encounterId: 61841 }],
+  ["Neltharion's Lair", { abbrev: "nl", timer: 33 * MIN, encounterId: 61458 }],
 ]);
+
+export const TYRANNICAL = 9;
+export const FORTIFIED = 10;
 
 // Since I'm downloading image manually, I'm assuming these ids hold consistent
 const AFFIXES = {
@@ -29,8 +36,8 @@ const AFFIXES = {
   "6": "raging",
   "7": "bolstering",
   "8": "sanguine",
-  "9": "tyrannical",
-  "10": "fortified",
+  [TYRANNICAL]: "tyrannical",
+  [FORTIFIED]: "fortified",
   "11": "bursting",
   "12": "grievous",
   "13": "explosive",
