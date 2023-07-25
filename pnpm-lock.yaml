@@ -7,6 +7,9 @@ dependencies:
   astro:
     specifier: ^2.6.1
     version: 2.6.1
+  zod:
+    specifier: ~3.21.4
+    version: 3.21.4
 
 packages:
 
