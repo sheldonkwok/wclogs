@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@astrojs/vercel": "~3.2.5",
-    "astro": "^2.6.1",
+    "astro": "^2.9.2",
     "zod": "~3.21.4"
   }
 }
