@@ -63,6 +63,7 @@ const AFFIX_MAP = new Map<number, string>(Object.entries(AFFIXES).map(([key, val
 
 export interface RPlayer {
   role: apiV2.Role;
+  id: number;
   name: string;
   type: string;
   classSpec: string;
@@ -112,13 +113,12 @@ export function parseReports(reports: apiV2.Report[]): Parsed[] {
       const { timed, diff } = parseTime(f.name, keyTime);
 
       const key = S2_KEYS.get(f.name)!;
-
       const mainAffix = f.keystoneAffixes.find((a) => a === TYRANNICAL || a === FORTIFIED)!;
 
-      const players = findPlayers(rPlayers, f.friendlyPlayers).map((p) => {
-        p.compareUrl = `/compare.json?reportId=${r.code}&fightId=${f.id}&mainAffix=${mainAffix}&encounterId=${key.encounterId}&classSpec=${p.classSpec}`;
-        return p;
-      });
+      const players = findPlayers(rPlayers, f.friendlyPlayers);
+      for (const p of players) {
+        p.compareUrl = `/compare?reportId=${r.code}&fightId=${f.id}&mainAffix=${mainAffix}&encounterId=${key.encounterId}&classSpec=${p.classSpec}&sourceId=${p.id}`;
+      }
 
       return {
         key: f.name,
@@ -149,6 +149,7 @@ function parsePlayerDetails(details: apiV2.PlayerRoleDetails): Map<number, RPlay
 
     for (const player of playerRoles) {
       rPlayers.set(player.id, {
+        id: player.id,
         role: role,
         name: player.name,
         type: player.type,
@@ -162,9 +163,11 @@ function parsePlayerDetails(details: apiV2.PlayerRoleDetails): Map<number, RPlay
 }
 
 const UNKNOWN_PLAYER = Object.freeze({
+  id: -1,
   role: "dps" as const,
   name: "?",
   type: "?",
+  classSpec: "",
   rioUrl: "",
 });
 

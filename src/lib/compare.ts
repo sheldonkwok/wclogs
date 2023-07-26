@@ -6,6 +6,7 @@ export interface CompareURLInput {
   mainAffix: number;
   encounterId: number;
   classSpec: string;
+  sourceId: number;
 }
 
 export async function getCompareURL({
@@ -14,22 +15,35 @@ export async function getCompareURL({
   mainAffix,
   encounterId,
   classSpec,
+  sourceId,
 }: CompareURLInput): Promise<string> {
   const { classId, specId } = CLASSES[classSpec];
 
   const best = await getBestReport({ mainAffix, encounterId, classId, specId });
+  const bestSourceId = await getSourceId(best.reportID, best.name);
 
-  return `https://www.warcraftlogs.com/reports/compare/${reportId}/${best.reportID}#fight=${fightId},${best.fightID}`;
+  let url = `https://www.warcraftlogs.com/reports/compare/${reportId}/${best.reportID}#fight=${fightId},${best.fightID}&type=casts`;
+  if (bestSourceId !== undefined) url += `&source=${sourceId},${bestSourceId}`;
+
+  return url;
 }
 
-export interface RankingsInput {
+async function getSourceId(reportId: string, name: string): Promise<number | undefined> {
+  const comp = await apiV1.getComposition(reportId);
+
+  for (const c of comp) {
+    if (c.name === name) return c.id;
+  }
+}
+
+interface RankingsInput {
   mainAffix: number;
   encounterId: number;
   classId: number;
   specId: number;
 }
 
-export async function getBestReport({
+async function getBestReport({
   mainAffix,
   encounterId,
   classId,
@@ -38,7 +52,6 @@ export async function getBestReport({
   const { rankings } = await apiV1.getRankings(encounterId, classId, specId);
 
   const best = rankings.filter((k) => k.affixes.includes(mainAffix)).sort((a, b) => b.score - a.score);
-
   return best[0];
 }
 

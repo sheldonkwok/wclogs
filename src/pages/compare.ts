@@ -10,6 +10,7 @@ const ZCompareQuery = z.object({
   classSpec: z.string(),
   mainAffix: z.coerce.number(),
   encounterId: z.coerce.number(),
+  sourceId: z.coerce.number(),
 });
 
 export async function get({ request, redirect }: APIContext) {
