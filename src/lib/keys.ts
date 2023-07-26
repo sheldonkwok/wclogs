@@ -14,10 +14,7 @@ const S2_KEYS = new Map<string, KeyInfo>([
   ["Brackenhide Hollow", { abbrev: "bh", timer: 35 * MIN, encounterId: 12520 }],
   ["Neltharus", { abbrev: "nelt", timer: 33 * MIN, encounterId: 12519 }],
   ["Halls of Infusion", { abbrev: "hoi", timer: 35 * MIN, encounterId: 12527 }],
-  [
-    "The Vortex Pinnacle",
-    { abbrev: "vp", timer: 30 * MIN, encounterId: 10657 },
-  ],
+  ["The Vortex Pinnacle", { abbrev: "vp", timer: 30 * MIN, encounterId: 10657 }],
   ["Freehold", { abbrev: "fh", timer: 30 * MIN, encounterId: 61754 }],
   ["The Underrot", { abbrev: "undr", timer: 30 * MIN, encounterId: 61841 }],
   ["Neltharion's Lair", { abbrev: "nl", timer: 33 * MIN, encounterId: 61458 }],
@@ -62,9 +59,7 @@ const AFFIXES = {
   "137": "shielding",
 };
 
-const AFFIX_MAP = new Map<number, string>(
-  Object.entries(AFFIXES).map(([key, val]) => [Number(key), val])
-);
+const AFFIX_MAP = new Map<number, string>(Object.entries(AFFIXES).map(([key, val]) => [Number(key), val]));
 
 export interface RPlayer {
   role: apiV2.Role;
@@ -118,9 +113,7 @@ export function parseReports(reports: apiV2.Report[]): Parsed[] {
 
       const key = S2_KEYS.get(f.name)!;
 
-      const mainAffix = f.keystoneAffixes.find(
-        (a) => a === TYRANNICAL || a === FORTIFIED
-      )!;
+      const mainAffix = f.keystoneAffixes.find((a) => a === TYRANNICAL || a === FORTIFIED)!;
 
       const players = findPlayers(rPlayers, f.friendlyPlayers).map((p) => {
         p.compareUrl = `/compare.json?reportId=${r.code}&fightId=${f.id}&mainAffix=${mainAffix}&encounterId=${key.encounterId}&classSpec=${p.classSpec}`;
@@ -147,9 +140,7 @@ export function parseReports(reports: apiV2.Report[]): Parsed[] {
   return cleanReports(allReports);
 }
 
-function parsePlayerDetails(
-  details: apiV2.PlayerRoleDetails
-): Map<number, RPlayer> {
+function parsePlayerDetails(details: apiV2.PlayerRoleDetails): Map<number, RPlayer> {
   const rPlayers = new Map<number, RPlayer>();
 
   for (const role of ROLES) {
@@ -178,10 +169,7 @@ const UNKNOWN_PLAYER = Object.freeze({
 });
 
 // The API can mix up runs if the party is filled in another run
-function findPlayers(
-  rPlayers: Map<number, RPlayer>,
-  playerIds: number[]
-): RPlayer[] {
+function findPlayers(rPlayers: Map<number, RPlayer>, playerIds: number[]): RPlayer[] {
   let hasTank = false;
   let hasHealer = false;
 
@@ -214,10 +202,7 @@ function formatTime(ms: number): string {
 }
 
 const DEFAULT_TIME = Object.freeze({ timed: false, diff: "xx:xx" });
-function parseTime(
-  name: string,
-  time: number
-): { timed: boolean; diff: string } {
+function parseTime(name: string, time: number): { timed: boolean; diff: string } {
   if (!time) return DEFAULT_TIME;
 
   const timer = S2_KEYS.get(name)?.timer;
@@ -244,11 +229,7 @@ function cleanReports(reports: Parsed[]): Parsed[] {
     const curr = reports[i];
     const prev = cleaned[prevIndex];
 
-    if (
-      curr.key === prev.key &&
-      curr.level === prev.level &&
-      MS_RANGE > Math.abs(curr.date - prev.date)
-    ) {
+    if (curr.key === prev.key && curr.level === prev.level && MS_RANGE > Math.abs(curr.date - prev.date)) {
       if (curr.owner === PREF_OWNER) continue;
       cleaned[prevIndex] = curr;
     } else {

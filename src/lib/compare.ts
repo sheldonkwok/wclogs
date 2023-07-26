@@ -37,9 +37,7 @@ export async function getBestReport({
 }: RankingsInput): Promise<apiV1.Ranking> {
   const { rankings } = await apiV1.getRankings(encounterId, classId, specId);
 
-  const best = rankings
-    .filter((k) => k.affixes.includes(mainAffix))
-    .sort((a, b) => b.score - a.score);
+  const best = rankings.filter((k) => k.affixes.includes(mainAffix)).sort((a, b) => b.score - a.score);
 
   return best[0];
 }

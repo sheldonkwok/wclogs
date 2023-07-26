@@ -4,10 +4,7 @@ const KEY = import.meta.env.API_KEY_V1;
 const BASE_URL = "https://www.warcraftlogs.com/v1";
 const KEY_QS = `api_key=${KEY}`;
 
-async function get(
-  path: string,
-  qs?: Record<string, string | number | boolean>
-): Promise<unknown> {
+async function get(path: string, qs?: Record<string, string | number | boolean>): Promise<unknown> {
   let qsStr = KEY_QS;
 
   if (qs) {
