@@ -7,6 +7,7 @@ function showImg(role: Role, index: number): boolean {
 	if (role !== 'dps') return true;
 	return index === 0;
 }
+
 ---
 
 <div class="players">
@@ -14,7 +15,7 @@ function showImg(role: Role, index: number): boolean {
 		players.map((p, i) => (
 			<>
 				{showImg(p.role, i) ? <img class="role-img" src=`images/roles/${p.role}.webp` /> : <></>}
-				<a class={p.type.toLowerCase()} href={p.rioUrl}>
+				<a class={p.type.toLowerCase()} href={p.compareUrl ?? p.rioUrl}>
 					{p.name}
 				</a>
 			</>

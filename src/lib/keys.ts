@@ -70,7 +70,9 @@ export interface RPlayer {
   role: apiV2.Role;
   name: string;
   type: string;
+  classSpec: string;
   rioUrl: string;
+  compareUrl?: string;
 }
 
 export interface Parsed {
@@ -114,9 +116,20 @@ export function parseReports(reports: apiV2.Report[]): Parsed[] {
       const keyTime = f.keystoneTime ?? 0;
       const { timed, diff } = parseTime(f.name, keyTime);
 
+      const key = S2_KEYS.get(f.name)!;
+
+      const mainAffix = f.keystoneAffixes.find(
+        (a) => a === TYRANNICAL || a === FORTIFIED
+      )!;
+
+      const players = findPlayers(rPlayers, f.friendlyPlayers).map((p) => {
+        p.compareUrl = `/compare.json?reportId=${r.code}&fightId=${f.id}&mainAffix=${mainAffix}&encounterId=${key.encounterId}&classSpec=${p.classSpec}`;
+        return p;
+      });
+
       return {
         key: f.name,
-        keyAbbrev: S2_KEYS.get(f.name)?.abbrev ?? "",
+        keyAbbrev: key?.abbrev ?? "",
         level: f.keystoneLevel,
         affixes: f.keystoneAffixes.map((a) => AFFIX_MAP.get(a) ?? "unknown"),
         finished: f.kill ?? false,
@@ -125,7 +138,7 @@ export function parseReports(reports: apiV2.Report[]): Parsed[] {
         timeDiff: diff,
         owner: r.owner.name,
         date: r.startTime + f.startTime,
-        players: findPlayers(rPlayers, f.friendlyPlayers),
+        players,
         url: `https://www.warcraftlogs.com/reports/${r.code}#fight=${f.id}`,
       };
     });
@@ -148,6 +161,7 @@ function parsePlayerDetails(
         role: role,
         name: player.name,
         type: player.type,
+        classSpec: player.icon,
         rioUrl: `https://raider.io/characters/us/${player.server}/${player.name}`,
       });
     }
