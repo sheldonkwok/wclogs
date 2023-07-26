@@ -2,7 +2,6 @@ import type { APIContext } from "astro";
 import { z } from "zod";
 
 import * as compare from "../lib/compare";
-import * as keys from "../lib/keys";
 
 const ZCompareQuery = z.object({
   reportId: z.string(),

@@ -11,7 +11,7 @@ export async function getComposition(reportId: string): Promise<z.infer<typeof Z
   const data = await get(`/report/tables/summary/${reportId}`, {
     hostility: 1, // helps with filtering speed
     sourceclass: "junk", // helps with filtering speed
-    end: 1000000,
+    end: 10000000, // could probably calculate the actual time to help with this
   });
   return ZSummary.parse(data).composition;
 }
