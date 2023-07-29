@@ -115,10 +115,8 @@ export function parseReports(reports: apiV2.Report[]): Parsed[] {
       const key = S2_KEYS.get(f.name)!;
       const mainAffix = f.keystoneAffixes.find((a) => a === TYRANNICAL || a === FORTIFIED)!;
 
-      const players = findPlayers(rPlayers, f.friendlyPlayers);
-      for (const p of players) {
-        p.compareUrl = `/compare?reportId=${r.code}&fightId=${f.id}&mainAffix=${mainAffix}&encounterId=${key.encounterId}&classSpec=${p.classSpec}&sourceId=${p.id}`;
-      }
+      const players = findPlayers(rPlayers, f.friendlyPlayers)
+        .map(p => ({ ...p, compareUrl: `/compare?reportId=${r.code}&fightId=${f.id}&mainAffix=${mainAffix}&encounterId=${key.encounterId}&classSpec=${p.classSpec}&sourceId=${p.id}` }));
 
       return {
         key: f.name,
