@@ -117,6 +117,8 @@ async function getReports(): Promise<Fight[]> {
   );
 
   const reportIds = reports.map((r) => r.id);
+
+  // typing on mget is broke
   const cache = (await redisClient.mGet(reportIds)) as any as (string | null)[];
 
   // not type safe rn
