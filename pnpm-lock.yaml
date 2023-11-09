@@ -1,5 +1,9 @@
 lockfileVersion: '6.0'
 
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
 dependencies:
   '@astrojs/vercel':
     specifier: ~3.2.5
@@ -7,6 +11,9 @@ dependencies:
   astro:
     specifier: ^2.9.2
     version: 2.9.2
+  p-map:
+    specifier: ~6.0.0
+    version: 6.0.0
   zod:
     specifier: ~3.21.4
     version: 3.21.4
@@ -2802,6 +2809,11 @@ packages:
     engines: {node: '>=10'}
     dependencies:
       p-limit: 3.1.0
+    dev: false
+
+  /p-map@6.0.0:
+    resolution: {integrity: sha512-T8BatKGY+k5rU+Q/GTYgrEf2r4xRMevAN5mtXc2aPc4rS1j3s+vWTaO2Wag94neXuCAUAs8cxBL9EeB5EA6diw==}
+    engines: {node: '>=16'}
     dev: false
 
   /p-try@2.2.0:

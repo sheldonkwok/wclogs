@@ -1,20 +1,21 @@
 import { z } from "zod";
 
+import { GUILD_ID } from "./consts";
+
 const CLIENT_ID = import.meta.env.CLIENT_ID;
 const CLIENT_SECRET = import.meta.env.CLIENT_SECRET;
 const TOKEN = await getAuth();
 
 const gql = String.raw; // for syntax highlighting
-const GUILD_ID = 365689;
 const MYTHIC_DIFF = 10;
 const LIMIT = 20;
 const FIGHTS = `[${[...Array(100).keys()].join(" ")}]`;
 
-const query = gql`
-  query {
-    reportData {
-      reports(guildID: ${GUILD_ID}, limit: ${LIMIT}) {
-        data {
+function getReportQuery(code: string): string {
+  return gql`
+    query {
+      reportData {
+        report(code: "${code}") {
           code
           owner {
             name
@@ -34,8 +35,8 @@ const query = gql`
         }
       }
     }
-  }
-`;
+  `;
+}
 
 const ZPlayer = z.object({
   id: z.number(),
@@ -86,7 +87,8 @@ export type Report = z.infer<typeof ZReport>;
 
 const ZReportArr = z.array(ZReport);
 
-export async function getReports(): Promise<z.infer<typeof ZReportArr>> {
+export async function getReport(code: string): Promise<z.infer<typeof ZReport>> {
+  const query = getReportQuery(code);
   const request = await fetch("https://www.warcraftlogs.com/api/v2/client", {
     method: "POST",
     headers: {
@@ -97,7 +99,9 @@ export async function getReports(): Promise<z.infer<typeof ZReportArr>> {
   });
 
   const reqData = await request.json();
-  return ZReportArr.parse(reqData.data.reportData.reports.data);
+  const report = reqData.data.reportData.report;
+
+  return ZReport.parse(report);
 }
 
 // The default expiration is a year so we assume this gets evicted within that period

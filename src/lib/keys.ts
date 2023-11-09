@@ -1,4 +1,8 @@
+import pMap from "p-map";
+
+import * as apiV1 from "./api-v1";
 import * as apiV2 from "./api-v2";
+import * as consts from "./consts";
 
 export type { Role } from "./api-v2";
 const ROLES = apiV2.ROLES;
@@ -94,12 +98,22 @@ export interface KeyData {
 export async function getKeys(): Promise<KeyData> {
   const start = Date.now();
 
-  const toParse = await apiV2.getReports();
+  const toParse = await getReports();
 
   const time = Date.now() - start;
   const data = parseReports(toParse);
 
   return { data, time };
+}
+
+async function getReports(): Promise<apiV2.Report[]> {
+  const reports = await apiV1.getReports(
+    consts.GUILD_NAME,
+    consts.GUILD_SERVER_NAME,
+    consts.GUILD_SERVER_REGION
+  );
+
+  return pMap(reports, async (report) => apiV2.getReport(report.id), { concurrency: 10 });
 }
 
 export function parseReports(reports: apiV2.Report[]): Parsed[] {
@@ -115,8 +129,10 @@ export function parseReports(reports: apiV2.Report[]): Parsed[] {
       const key = S2_KEYS.get(f.name)!;
       const mainAffix = f.keystoneAffixes.find((a) => a === TYRANNICAL || a === FORTIFIED)!;
 
-      const players = findPlayers(rPlayers, f.friendlyPlayers)
-        .map(p => ({ ...p, compareUrl: `/compare?reportId=${r.code}&fightId=${f.id}&mainAffix=${mainAffix}&encounterId=${key.encounterId}&classSpec=${p.classSpec}&sourceId=${p.id}` }));
+      const players = findPlayers(rPlayers, f.friendlyPlayers).map((p) => ({
+        ...p,
+        compareUrl: `/compare?reportId=${r.code}&fightId=${f.id}&mainAffix=${mainAffix}&encounterId=${key.encounterId}&classSpec=${p.classSpec}&sourceId=${p.id}`,
+      }));
 
       return {
         key: f.name,

@@ -54,6 +54,24 @@ export async function getRankings(
   return ZEncounter.parse(encounters);
 }
 
+const ZReport = z.object({
+  id: z.string(),
+});
+
+const ZReportArr = z.array(ZReport);
+
+export async function getReports(
+  guildName: string,
+  serverName: string,
+  serverRegion: string
+): Promise<z.infer<typeof ZReportArr>> {
+  const now = new Date();
+  const start = now.setMonth(now.getMonth() - 3);
+
+  const reports = await get(`/reports/guild/${guildName}/${serverName}/${serverRegion}`, { start });
+  return ZReportArr.parse(reports);
+}
+
 async function get(path: string, qs?: Record<string, string | number | boolean>): Promise<unknown> {
   let qsStr = KEY_QS;
 
