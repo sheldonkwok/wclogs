@@ -13,6 +13,7 @@
     "@astrojs/vercel": "~3.2.5",
     "astro": "^2.9.2",
     "p-map": "~6.0.0",
+    "redis": "~4.6.10",
     "zod": "~3.21.4"
   },
   "prettier": {

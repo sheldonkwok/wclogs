@@ -1,9 +1,9 @@
 ---
-import type { Parsed } from "../lib/keys";
+import type { Fight } from "../lib/keys";
 import Players from "./Players.astro";
 
 const { key, keyAbbrev, level, affixes, timed, finished, timeDiff, players, url } =
-  Astro.props as Parsed;
+  Astro.props as Fight;
 
 const keyExecution = timed ? "pass" : finished ? "fail" : "left";
 

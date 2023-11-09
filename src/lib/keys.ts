@@ -1,4 +1,5 @@
 import pMap from "p-map";
+import redis from "redis";
 
 import * as apiV1 from "./api-v1";
 import * as apiV2 from "./api-v2";
@@ -6,6 +7,10 @@ import * as consts from "./consts";
 
 export type { Role } from "./api-v2";
 const ROLES = apiV2.ROLES;
+
+const redisUrl = import.meta.env.REDIS_URL;
+const redisClient = redis.createClient({ url: redisUrl });
+await redisClient.connect();
 
 export interface KeyInfo {
   abbrev: string;
@@ -75,7 +80,7 @@ export interface RPlayer {
   compareUrl?: string;
 }
 
-export interface Parsed {
+export interface Fight {
   key: string;
   keyAbbrev: string;
   level: number;
@@ -91,7 +96,7 @@ export interface Parsed {
 }
 
 export interface KeyData {
-  data: Parsed[];
+  data: Fight[];
   time: number;
 }
 
@@ -104,31 +109,37 @@ export async function getKeys(): Promise<KeyData> {
   return { data, time };
 }
 
-async function getReports(): Promise<Parsed[]> {
+async function getReports(): Promise<Fight[]> {
   const reports = await apiV1.getReports(
     consts.GUILD_NAME,
     consts.GUILD_SERVER_NAME,
     consts.GUILD_SERVER_REGION
   );
 
-  const allParsed = await pMap(
-    reports,
-    async ({ id: reportId }) => {
-      const report = await apiV2.getReport(reportId);
-      return parseReport(report);
-    },
-    { concurrency: 10 }
-  );
-
+  const allParsed = await pMap(reports, async ({ id: reportId }) => getFights(reportId), { concurrency: 10 });
   return cleanReports(allParsed.flat());
 }
 
-export function parseReports(reports: apiV2.Report[]): Parsed[] {
+async function getFights(reportId: string): Promise<Fight[]> {
+  const cached = await redisClient.get(reportId);
+
+  if (cached) {
+    return JSON.parse(cached) as Fight[];
+  }
+
+  const report = await apiV2.getReport(reportId);
+  const fights = parseReport(report);
+
+  await redisClient.set(reportId, JSON.stringify(fights));
+  return fights;
+}
+
+export function parseReports(reports: apiV2.Report[]): Fight[] {
   const allReports = reports.flatMap((r) => parseReport(r));
   return cleanReports(allReports);
 }
 
-export function parseReport(report: apiV2.Report): Parsed[] {
+export function parseReport(report: apiV2.Report): Fight[] {
   if (Array.isArray(report.playerDetails.data.playerDetails)) return []; // Bad data
 
   const rPlayers = parsePlayerDetails(report.playerDetails.data.playerDetails);
@@ -242,7 +253,7 @@ function parseTime(name: string, time: number): { timed: boolean; diff: string }
 
 const PREF_OWNER = "FMJustice";
 const MS_RANGE = 60 * 1000;
-function cleanReports(reports: Parsed[]): Parsed[] {
+function cleanReports(reports: Fight[]): Fight[] {
   if (reports.length === 0) return [];
 
   reports.sort((a, b) => b.date - a.date);
