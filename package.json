@@ -10,8 +10,8 @@
     "astro": "astro"
   },
   "dependencies": {
-    "@astrojs/vercel": "~3.2.5",
-    "astro": "^2.9.2",
+    "@astrojs/vercel": "~5.2.0",
+    "astro": "^3.5.0",
     "p-map": "~6.0.0",
     "redis": "~4.6.10",
     "zod": "~3.21.4"
