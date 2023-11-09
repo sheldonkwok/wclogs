@@ -116,22 +116,22 @@ async function getReports(): Promise<Fight[]> {
     consts.GUILD_SERVER_REGION
   );
 
-  const allParsed = await pMap(reports, async ({ id: reportId }) => getFights(reportId), { concurrency: 10 });
-  return cleanReports(allParsed.flat());
-}
+  const reportIds = reports.map((r) => r.id);
+  const cache = (await redisClient.mGet(reportIds)) as any as (string | null)[];
 
-async function getFights(reportId: string): Promise<Fight[]> {
-  const cached = await redisClient.get(reportId);
+  // not type safe rn
+  const allFights = await pMap(cache, async (cachedReport, index) => {
+    if (cachedReport) return JSON.parse(cachedReport) as Fight[];
 
-  if (cached) {
-    return JSON.parse(cached) as Fight[];
-  }
+    const reportId = reportIds[index];
+    const report = await apiV2.getReport(reportId);
+    const fights = parseReport(report);
 
-  const report = await apiV2.getReport(reportId);
-  const fights = parseReport(report);
+    await redisClient.set(reportId, JSON.stringify(fights));
+    return fights;
+  });
 
-  await redisClient.set(reportId, JSON.stringify(fights));
-  return fights;
+  return cleanReports(allFights.flat());
 }
 
 export function parseReports(reports: apiV2.Report[]): Fight[] {
