@@ -98,60 +98,68 @@ export interface KeyData {
 export async function getKeys(): Promise<KeyData> {
   const start = Date.now();
 
-  const toParse = await getReports();
-
+  const data = await getReports();
   const time = Date.now() - start;
-  const data = parseReports(toParse);
 
   return { data, time };
 }
 
-async function getReports(): Promise<apiV2.Report[]> {
+async function getReports(): Promise<Parsed[]> {
   const reports = await apiV1.getReports(
     consts.GUILD_NAME,
     consts.GUILD_SERVER_NAME,
     consts.GUILD_SERVER_REGION
   );
 
-  return pMap(reports, async (report) => apiV2.getReport(report.id), { concurrency: 10 });
+  const allParsed = await pMap(
+    reports,
+    async ({ id: reportId }) => {
+      const report = await apiV2.getReport(reportId);
+      return parseReport(report);
+    },
+    { concurrency: 10 }
+  );
+
+  return cleanReports(allParsed.flat());
 }
 
 export function parseReports(reports: apiV2.Report[]): Parsed[] {
-  const allReports = reports.flatMap((r) => {
-    if (Array.isArray(r.playerDetails.data.playerDetails)) return []; // Bad data
-
-    const rPlayers = parsePlayerDetails(r.playerDetails.data.playerDetails);
-
-    return r.fights.reverse().map((f) => {
-      const keyTime = f.keystoneTime ?? 0;
-      const { timed, diff } = parseTime(f.name, keyTime);
-
-      const key = S2_KEYS.get(f.name)!;
-      const mainAffix = f.keystoneAffixes.find((a) => a === TYRANNICAL || a === FORTIFIED)!;
-
-      const players = findPlayers(rPlayers, f.friendlyPlayers).map((p) => ({
-        ...p,
-        compareUrl: `/compare?reportId=${r.code}&fightId=${f.id}&mainAffix=${mainAffix}&encounterId=${key.encounterId}&classSpec=${p.classSpec}&sourceId=${p.id}`,
-      }));
-
-      return {
-        key: f.name,
-        keyAbbrev: key?.abbrev ?? "",
-        level: f.keystoneLevel,
-        affixes: f.keystoneAffixes.map((a) => AFFIX_MAP.get(a) ?? "unknown"),
-        finished: f.kill ?? false,
-        time: formatTime(keyTime),
-        timed,
-        timeDiff: diff,
-        owner: r.owner.name,
-        date: r.startTime + f.startTime,
-        players,
-        url: `https://www.warcraftlogs.com/reports/${r.code}#fight=${f.id}`,
-      };
-    });
-  });
-
+  const allReports = reports.flatMap((r) => parseReport(r));
   return cleanReports(allReports);
+}
+
+export function parseReport(report: apiV2.Report): Parsed[] {
+  if (Array.isArray(report.playerDetails.data.playerDetails)) return []; // Bad data
+
+  const rPlayers = parsePlayerDetails(report.playerDetails.data.playerDetails);
+
+  return report.fights.reverse().map((f) => {
+    const keyTime = f.keystoneTime ?? 0;
+    const { timed, diff } = parseTime(f.name, keyTime);
+
+    const key = S2_KEYS.get(f.name)!;
+    const mainAffix = f.keystoneAffixes.find((a) => a === TYRANNICAL || a === FORTIFIED)!;
+
+    const players = findPlayers(rPlayers, f.friendlyPlayers).map((p) => ({
+      ...p,
+      compareUrl: `/compare?reportId=${report.code}&fightId=${f.id}&mainAffix=${mainAffix}&encounterId=${key.encounterId}&classSpec=${p.classSpec}&sourceId=${p.id}`,
+    }));
+
+    return {
+      key: f.name,
+      keyAbbrev: key?.abbrev ?? "",
+      level: f.keystoneLevel,
+      affixes: f.keystoneAffixes.map((a) => AFFIX_MAP.get(a) ?? "unknown"),
+      finished: f.kill ?? false,
+      time: formatTime(keyTime),
+      timed,
+      timeDiff: diff,
+      owner: report.owner.name,
+      date: report.startTime + f.startTime,
+      players,
+      url: `https://www.warcraftlogs.com/reports/${report.code}#fight=${f.id}`,
+    };
+  });
 }
 
 function parsePlayerDetails(details: apiV2.PlayerRoleDetails): Map<number, RPlayer> {
