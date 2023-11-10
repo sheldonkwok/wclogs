@@ -110,13 +110,7 @@ export async function getKeys(): Promise<KeyData> {
 }
 
 async function getReports(): Promise<Fight[]> {
-  const reports = await apiV1.getReports(
-    consts.GUILD_NAME,
-    consts.GUILD_SERVER_NAME,
-    consts.GUILD_SERVER_REGION
-  );
-
-  const reportIds = reports.map((r) => r.id);
+  const reportIds = await getReportIds();
 
   // typing on mget is broke
   const cache = (await redisClient.mGet(reportIds)) as any as (string | null)[];
@@ -134,6 +128,25 @@ async function getReports(): Promise<Fight[]> {
   });
 
   return cleanReports(allFights.flat());
+}
+
+const REPORT_ID_KEY = "reportIds";
+const REPORT_SEPARATOR = ",";
+
+export async function getReportIds(): Promise<string[]> {
+  const cached = await redisClient.get(REPORT_ID_KEY);
+  if (cached) return cached.split(REPORT_SEPARATOR);
+
+  const reports = await apiV1.getReports(
+    consts.GUILD_NAME,
+    consts.GUILD_SERVER_NAME,
+    consts.GUILD_SERVER_REGION
+  );
+
+  const reportIds = reports.map((r) => r.id);
+
+  await redisClient.set(REPORT_ID_KEY, reportIds.join(REPORT_SEPARATOR), { EX: 60 });
+  return reportIds;
 }
 
 export function parseReports(reports: apiV2.Report[]): Fight[] {
