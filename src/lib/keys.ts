@@ -141,7 +141,7 @@ export async function getReportIds(): Promise<string[]> {
 
   const reportIds = reports.map((r) => r.id);
 
-  await redis.set(REPORT_ID_KEY, reportIds.join(REPORT_SEPARATOR), { EX: 60 });
+  await redis.set(REPORT_ID_KEY, reportIds.join(REPORT_SEPARATOR), { EX: 5 * 60 });
   return reportIds;
 }
 
