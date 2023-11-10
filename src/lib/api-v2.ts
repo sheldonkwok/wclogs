@@ -1,14 +1,12 @@
 import { z } from "zod";
 
-import { GUILD_ID } from "./consts";
+import redis from "./redis";
 
 const CLIENT_ID = import.meta.env.CLIENT_ID;
 const CLIENT_SECRET = import.meta.env.CLIENT_SECRET;
-const TOKEN = await getAuth();
 
 const gql = String.raw; // for syntax highlighting
 const MYTHIC_DIFF = 10;
-const LIMIT = 20;
 const FIGHTS = `[${[...Array(100).keys()].join(" ")}]`;
 
 function getReportQuery(code: string): string {
@@ -85,10 +83,10 @@ const ZReport = z.object({
 
 export type Report = z.infer<typeof ZReport>;
 
-const ZReportArr = z.array(ZReport);
-
 export async function getReport(code: string): Promise<z.infer<typeof ZReport>> {
   const query = getReportQuery(code);
+
+  const token = await getAuth();
   const request = await fetch("https://www.warcraftlogs.com/api/v2/client", {
     method: "POST",
     headers: {
@@ -104,8 +102,18 @@ export async function getReport(code: string): Promise<z.infer<typeof ZReport>> 
   return ZReport.parse(report);
 }
 
-// The default expiration is a year so we assume this gets evicted within that period
+const ZAuth = z.object({
+  access_token: z.string(),
+  expires_in: z.number(),
+});
+
+const TOKEN_KEY = "auth:v2";
+const TOKEN = await getAuth();
+
 async function getAuth(): Promise<string> {
+  const cache = await redis.get(TOKEN_KEY);
+  if (cache) return cache;
+
   const res = await fetch("https://www.warcraftlogs.com/oauth/token", {
     method: "POST",
     headers: {
@@ -115,7 +123,11 @@ async function getAuth(): Promise<string> {
   });
 
   if (!res.ok) throw new Error("Error fetching auth");
-  const { access_token } = await res.json();
+
+  const data = await res.json();
+  const { access_token, expires_in } = ZAuth.parse(data);
+
+  await redis.set(TOKEN_KEY, access_token, { EX: expires_in / 2 });
 
   return access_token;
 }
