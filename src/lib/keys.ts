@@ -1,16 +1,12 @@
 import pMap from "p-map";
-import redis from "redis";
 
+import redis from "./redis";
 import * as apiV1 from "./api-v1";
 import * as apiV2 from "./api-v2";
 import * as consts from "./consts";
 
 export type { Role } from "./api-v2";
 const ROLES = apiV2.ROLES;
-
-const redisUrl = import.meta.env.REDIS_URL;
-const redisClient = redis.createClient({ url: redisUrl });
-await redisClient.connect();
 
 export interface KeyInfo {
   abbrev: string;
@@ -113,7 +109,7 @@ async function getReports(): Promise<Fight[]> {
   const reportIds = await getReportIds();
 
   // typing on mget is broke
-  const cache = (await redisClient.mGet(reportIds)) as any as (string | null)[];
+  const cache = (await redis.mGet(reportIds)) as any as (string | null)[];
 
   // not type safe rn
   const allFights = await pMap(cache, async (cachedReport, index) => {
@@ -123,18 +119,18 @@ async function getReports(): Promise<Fight[]> {
     const report = await apiV2.getReport(reportId);
     const fights = parseReport(report);
 
-    await redisClient.set(reportId, JSON.stringify(fights));
+    await redis.set(reportId, JSON.stringify(fights));
     return fights;
   });
 
   return cleanReports(allFights.flat());
 }
 
-const REPORT_ID_KEY = "reportIds";
+export const REPORT_ID_KEY = "reportIds";
 const REPORT_SEPARATOR = ",";
 
 export async function getReportIds(): Promise<string[]> {
-  const cached = await redisClient.get(REPORT_ID_KEY);
+  const cached = await redis.get(REPORT_ID_KEY);
   if (cached) return cached.split(REPORT_SEPARATOR);
 
   const reports = await apiV1.getReports(
@@ -145,7 +141,7 @@ export async function getReportIds(): Promise<string[]> {
 
   const reportIds = reports.map((r) => r.id);
 
-  await redisClient.set(REPORT_ID_KEY, reportIds.join(REPORT_SEPARATOR), { EX: 60 });
+  await redis.set(REPORT_ID_KEY, reportIds.join(REPORT_SEPARATOR), { EX: 60 });
   return reportIds;
 }
 

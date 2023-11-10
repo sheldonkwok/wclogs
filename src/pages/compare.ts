@@ -12,7 +12,7 @@ const ZCompareQuery = z.object({
   sourceId: z.coerce.number(),
 });
 
-export async function get({ request, redirect }: APIContext) {
+export async function GET({ request, redirect }: APIContext) {
   const search = new URL(request.url).search;
   const searchP = new URLSearchParams(search);
   const qs = Object.fromEntries(searchP.entries());
