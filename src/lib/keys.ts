@@ -13,7 +13,10 @@ export interface KeyInfo {
   timer: number;
   encounterId: number;
 }
+
 const MIN = 60_000;
+const DAY = 24 * 60 * MIN;
+
 const KEYS = new Map<string, KeyInfo>([
   ["Uldaman", { abbrev: "uld", timer: 35 * MIN, encounterId: 12451 }],
   ["Brackenhide Hollow", { abbrev: "bh", timer: 35 * MIN, encounterId: 12520 }],
@@ -128,7 +131,7 @@ async function getReports(): Promise<Fight[]> {
     const report = await apiV2.getReport(reportId);
     const fights = parseReport(report);
 
-    await redis.set(reportId, JSON.stringify(fights));
+    await redis.set(reportId, JSON.stringify(fights), { EX: 7 * DAY });
     return fights;
   });
 
