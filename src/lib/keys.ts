@@ -14,7 +14,7 @@ export interface KeyInfo {
   encounterId: number;
 }
 const MIN = 60_000;
-const S2_KEYS = new Map<string, KeyInfo>([
+const KEYS = new Map<string, KeyInfo>([
   ["Uldaman", { abbrev: "uld", timer: 35 * MIN, encounterId: 12451 }],
   ["Brackenhide Hollow", { abbrev: "bh", timer: 35 * MIN, encounterId: 12520 }],
   ["Neltharus", { abbrev: "nelt", timer: 33 * MIN, encounterId: 12519 }],
@@ -23,6 +23,15 @@ const S2_KEYS = new Map<string, KeyInfo>([
   ["Freehold", { abbrev: "fh", timer: 30 * MIN, encounterId: 61754 }],
   ["The Underrot", { abbrev: "undr", timer: 30 * MIN, encounterId: 61841 }],
   ["Neltharion's Lair", { abbrev: "nl", timer: 33 * MIN, encounterId: 61458 }],
+
+  ["DOTI: Galakrond's Fall", { abbrev: "fall", timer: 34 * MIN, encounterId: 12579 }],
+  ["DOTI: Murazond's Rise", { abbrev: "rise", timer: 35 * MIN, encounterId: 12580 }],
+  ["Atal'Dazar", { abbrev: "ad", timer: 30 * MIN, encounterId: 61763 }],
+  ["Waycrest Manor", { abbrev: "wm", timer: 2200000, encounterId: 61862 }],
+  ["Black Rook Hold", { abbrev: "brh", timer: 36 * MIN, encounterId: 61501 }],
+  ["Darkheart Thicket", { abbrev: "dht", timer: 30 * MIN, encounterId: 61466 }],
+  ["Everbloom", { abbrev: "eb", timer: 33 * MIN, encounterId: 61279 }],
+  ["Throne of the Tides", { abbrev: "tott", timer: 34 * MIN, encounterId: 10643 }],
 ]);
 
 export const TYRANNICAL = 9;
@@ -159,7 +168,7 @@ export function parseReport(report: apiV2.Report): Fight[] {
     const keyTime = f.keystoneTime ?? 0;
     const { timed, diff } = parseTime(f.name, keyTime);
 
-    const key = S2_KEYS.get(f.name)!;
+    const key = KEYS.get(f.name)!;
     const mainAffix = f.keystoneAffixes.find((a) => a === TYRANNICAL || a === FORTIFIED)!;
 
     const players = findPlayers(rPlayers, f.friendlyPlayers).map((p) => ({
@@ -252,7 +261,7 @@ const DEFAULT_TIME = Object.freeze({ timed: false, diff: "xx:xx" });
 function parseTime(name: string, time: number): { timed: boolean; diff: string } {
   if (!time) return DEFAULT_TIME;
 
-  const timer = S2_KEYS.get(name)?.timer;
+  const timer = KEYS.get(name)?.timer;
   if (!timer) return DEFAULT_TIME;
 
   const timed = time < timer;
