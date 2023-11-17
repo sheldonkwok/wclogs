@@ -3,80 +3,14 @@ import pMap from "p-map";
 import redis from "./redis";
 import * as apiV1 from "./api-v1";
 import * as apiV2 from "./api-v2";
+import * as world from "./world";
 import * as consts from "./consts";
 
 export type { Role } from "./api-v2";
 const ROLES = apiV2.ROLES;
 
-export interface KeyInfo {
-  abbrev: string;
-  timer: number;
-  encounterId: number;
-}
-
 const MIN = 60_000;
 const DAY = 24 * 60 * MIN;
-
-const KEYS = new Map<string, KeyInfo>([
-  ["Uldaman", { abbrev: "uld", timer: 35 * MIN, encounterId: 12451 }],
-  ["Brackenhide Hollow", { abbrev: "bh", timer: 35 * MIN, encounterId: 12520 }],
-  ["Neltharus", { abbrev: "nelt", timer: 33 * MIN, encounterId: 12519 }],
-  ["Halls of Infusion", { abbrev: "hoi", timer: 35 * MIN, encounterId: 12527 }],
-  ["The Vortex Pinnacle", { abbrev: "vp", timer: 30 * MIN, encounterId: 10657 }],
-  ["Freehold", { abbrev: "fh", timer: 30 * MIN, encounterId: 61754 }],
-  ["The Underrot", { abbrev: "undr", timer: 30 * MIN, encounterId: 61841 }],
-  ["Neltharion's Lair", { abbrev: "nl", timer: 33 * MIN, encounterId: 61458 }],
-
-  ["DOTI: Galakrond's Fall", { abbrev: "fall", timer: 34 * MIN, encounterId: 12579 }],
-  ["DOTI: Murazond's Rise", { abbrev: "rise", timer: 35 * MIN, encounterId: 12580 }],
-  ["Atal'Dazar", { abbrev: "ad", timer: 30 * MIN, encounterId: 61763 }],
-  ["Waycrest Manor", { abbrev: "wm", timer: 2200000, encounterId: 61862 }],
-  ["Black Rook Hold", { abbrev: "brh", timer: 36 * MIN, encounterId: 61501 }],
-  ["Darkheart Thicket", { abbrev: "dht", timer: 30 * MIN, encounterId: 61466 }],
-  ["Everbloom", { abbrev: "eb", timer: 33 * MIN, encounterId: 61279 }],
-  ["Throne of the Tides", { abbrev: "tott", timer: 34 * MIN, encounterId: 10643 }],
-]);
-
-export const TYRANNICAL = 9;
-export const FORTIFIED = 10;
-
-// Since I'm downloading image manually, I'm assuming these ids hold consistent
-const AFFIXES = {
-  "1": "overflowing",
-  "2": "skittish",
-  "3": "volcanic",
-  "4": "necrotic",
-  "5": "teeming",
-  "6": "raging",
-  "7": "bolstering",
-  "8": "sanguine",
-  [TYRANNICAL]: "tyrannical",
-  [FORTIFIED]: "fortified",
-  "11": "bursting",
-  "12": "grievous",
-  "13": "explosive",
-  "14": "quaking",
-  "15": "relentless",
-  "16": "infested",
-  "117": "reaping",
-  "119": "beguiling",
-  "120": "awakened",
-  "121": "prideful",
-  "122": "inspiring",
-  "123": "spiteful",
-  "124": "storming",
-  "128": "tormented",
-  "129": "infernal",
-  "130": "encrypted",
-  "131": "shrouded",
-  "132": "thundering",
-  "134": "entangling",
-  "135": "afflicted",
-  "136": "incorporeal",
-  "137": "shielding",
-};
-
-const AFFIX_MAP = new Map<number, string>(Object.entries(AFFIXES).map(([key, val]) => [Number(key), val]));
 
 export interface RPlayer {
   role: apiV2.Role;
@@ -90,7 +24,7 @@ export interface RPlayer {
 
 export interface Fight {
   key: string;
-  keyAbbrev: string;
+  image: string;
   level: number;
   affixes: string[];
   finished: boolean;
@@ -169,10 +103,11 @@ export function parseReport(report: apiV2.Report): Fight[] {
 
   return report.fights.reverse().map((f) => {
     const keyTime = f.keystoneTime ?? 0;
-    const { timed, diff } = parseTime(f.name, keyTime);
+    const encounterId = f.encounterID;
+    const { timed, diff } = parseTime(encounterId, keyTime);
 
-    const key = KEYS.get(f.name)!;
-    const mainAffix = f.keystoneAffixes.find((a) => a === TYRANNICAL || a === FORTIFIED)!;
+    const key = world.KEYS.get(encounterId)!;
+    const mainAffix = f.keystoneAffixes.find((a) => a === world.TYRANNICAL || a === world.FORTIFIED)!;
 
     const players = findPlayers(rPlayers, f.friendlyPlayers).map((p) => ({
       ...p,
@@ -180,10 +115,10 @@ export function parseReport(report: apiV2.Report): Fight[] {
     }));
 
     return {
-      key: f.name,
-      keyAbbrev: key?.abbrev ?? "",
+      key: key.title,
+      image: key?.image ?? "",
       level: f.keystoneLevel,
-      affixes: f.keystoneAffixes.map((a) => AFFIX_MAP.get(a) ?? "unknown"),
+      affixes: f.keystoneAffixes.map((a) => world.AFFIX_MAP.get(a) ?? "unknown"),
       finished: f.kill ?? false,
       time: formatTime(keyTime),
       timed,
@@ -261,10 +196,10 @@ function formatTime(ms: number): string {
 }
 
 const DEFAULT_TIME = Object.freeze({ timed: false, diff: "xx:xx" });
-function parseTime(name: string, time: number): { timed: boolean; diff: string } {
+function parseTime(encounterId: number, time: number): { timed: boolean; diff: string } {
   if (!time) return DEFAULT_TIME;
 
-  const timer = KEYS.get(name)?.timer;
+  const timer = world.KEYS.get(encounterId)?.timer;
   if (!timer) return DEFAULT_TIME;
 
   const timed = time < timer;

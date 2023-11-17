@@ -1,20 +1,23 @@
 ---
+import { Image } from "astro:assets";
+
 import type { Fight } from "../lib/keys";
 import Players from "./Players.astro";
 
-const { key, keyAbbrev, level, affixes, timed, finished, timeDiff, players, url } =
+const { key, image, level, affixes, timed, finished, timeDiff, players, url } =
   Astro.props as Fight;
 
 const keyExecution = timed ? "pass" : finished ? "fail" : "left";
 
 const healerTank = players.slice(0, 2);
 const dps = players.slice(2);
+
 ---
 
 <div class="row">
   <div class="subRow" style={{ paddingBottom: "0.2em" }}>
     <div class="subRow">
-      <img src=`images/keys/${keyAbbrev}.jpeg` />
+      <img src={image}/>
       <a href={url}>
         {key}
       </a>

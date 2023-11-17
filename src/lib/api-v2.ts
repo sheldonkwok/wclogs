@@ -23,6 +23,7 @@ function getReportQuery(code: string): string {
           fights(difficulty: ${MYTHIC_DIFF}) {
             id
             name
+            encounterID
             keystoneLevel
             keystoneAffixes
             kill
@@ -65,6 +66,7 @@ const ZPlayerDetails = z.object({
 const ZFight = z.object({
   id: z.number(),
   name: z.string(),
+  encounterID: z.number(),
   keystoneLevel: z.number(),
   keystoneAffixes: z.array(z.number()),
   kill: z.boolean(),
