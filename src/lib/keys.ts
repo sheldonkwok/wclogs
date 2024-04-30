@@ -107,6 +107,7 @@ export function parseReport(report: apiV2.Report): Fight[] {
     const { timed, diff } = parseTime(encounterId, keyTime);
 
     const key = world.KEYS.get(encounterId)!;
+
     const mainAffix = f.keystoneAffixes.find((a) => a === world.TYRANNICAL || a === world.FORTIFIED)!;
 
     const players = findPlayers(rPlayers, f.friendlyPlayers).map((p) => ({

@@ -50,25 +50,25 @@
     },
     {
       "title": "Uldaman",
-      "encounterId": 12451,
+      "encounterId": 62451,
       "timer": "35m",
       "image": "uld"
     },
     {
       "title": "Brackenhide Hollow",
-      "encounterId": 12520,
+      "encounterId": 62520,
       "timer": "35m",
       "image": "bh"
     },
     {
       "title": "Neltharus",
-      "encounterId": 12519,
+      "encounterId": 62519,
       "timer": "33m",
       "image": "nelt"
     },
     {
       "title": "Halls of Infusion",
-      "encounterId": 12527,
+      "encounterId": 62527,
       "timer": "35m",
       "image": "hoi"
     },
@@ -95,6 +95,30 @@
       "encounterId": 61458,
       "timer": "33m",
       "image": "nl"
+    },
+    {
+      "title": "Algeth'ar Academy",
+      "encounterId": 62526,
+      "timer": "32m",
+      "image": "aa"
+    },
+    {
+      "title": "Ruby Life Pools",
+      "encounterId": 62521,
+      "timer": "30m",
+      "image": "rlp"
+    },
+    {
+      "title": "The Azure Vault",
+      "encounterId": 62515,
+      "timer": "37m",
+      "image": "av"
+    },
+    {
+      "title": "The Nokhud Offensive",
+      "encounterId": 62516,
+      "timer": "40m",
+      "image": "no"
     }
   ]
 }
