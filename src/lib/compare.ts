@@ -1,4 +1,6 @@
-import * as apiV1 from "./api-v1";
+import * as wcl from "./wcl";
+
+// TODO fix
 
 export interface CompareURLInput {
   reportId: string;
@@ -29,7 +31,7 @@ export async function getCompareURL({
 }
 
 async function getSourceId(reportId: string, name: string): Promise<number | undefined> {
-  const comp = await apiV1.getComposition(reportId);
+  const comp = await wcl.getComposition(reportId);
 
   for (const c of comp) {
     if (c.name === name) return c.id;
@@ -48,8 +50,8 @@ async function getBestReport({
   encounterId,
   classId,
   specId,
-}: RankingsInput): Promise<apiV1.Ranking> {
-  const { rankings } = await apiV1.getRankings(encounterId, classId, specId);
+}: RankingsInput): Promise<wcl.Ranking> {
+  const { rankings } = await wcl.getRankings(encounterId, classId, specId);
 
   const best = rankings.filter((k) => k.affixes.includes(mainAffix)).sort((a, b) => b.score - a.score);
   return best[0];
@@ -64,7 +66,7 @@ export interface ClassSpecIds {
 
 async function getClassSpec(): Promise<Record<string, ClassSpecIds>> {
   const out: Record<string, ClassSpecIds> = {};
-  const data = await apiV1.getClasses();
+  const data = await wcl.getClasses();
 
   for (const cl of data) {
     const name = cl.name.replace(/\s/g, "");

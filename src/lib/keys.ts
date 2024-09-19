@@ -1,19 +1,19 @@
 import pMap from "p-map";
 
 import redis from "./redis";
-import * as apiV1 from "./api-v1";
-import * as apiV2 from "./api-v2";
+
+import * as wcl from "./wcl";
 import * as world from "./world";
 import * as consts from "./consts";
 
-export type { Role } from "./api-v2";
-const ROLES = apiV2.ROLES;
+export type { Role } from "./wcl";
+const ROLES = wcl.ROLES;
 
 const MIN = 60_000;
 const DAY = 24 * 60 * MIN;
 
 export interface RPlayer {
-  role: apiV2.Role;
+  role: wcl.Role;
   id: number;
   name: string;
   type: string;
@@ -26,7 +26,7 @@ export interface Fight {
   key: string;
   image: string;
   level: number;
-  affixes: string[];
+  affixes: world.Affix[];
   finished: boolean;
   timed: boolean;
   time: string;
@@ -62,7 +62,7 @@ async function getReports(): Promise<Fight[]> {
     if (cachedReport) return JSON.parse(cachedReport) as Fight[];
 
     const reportId = reportIds[index];
-    const report = await apiV2.getReport(reportId);
+    const report = await wcl.getReport(reportId);
     const fights = parseReport(report);
 
     await redis.set(reportId, JSON.stringify(fights), { EX: 7 * DAY });
@@ -79,7 +79,7 @@ export async function getReportIds(): Promise<string[]> {
   const cached = await redis.get(REPORT_ID_KEY);
   if (cached) return cached.split(REPORT_SEPARATOR);
 
-  const reports = await apiV1.getReports(
+  const reports = await wcl.getReports(
     consts.GUILD_NAME,
     consts.GUILD_SERVER_NAME,
     consts.GUILD_SERVER_REGION
@@ -91,12 +91,12 @@ export async function getReportIds(): Promise<string[]> {
   return reportIds;
 }
 
-export function parseReports(reports: apiV2.Report[]): Fight[] {
+export function parseReports(reports: wcl.Report[]): Fight[] {
   const allReports = reports.flatMap((r) => parseReport(r));
   return cleanReports(allReports);
 }
 
-export function parseReport(report: apiV2.Report): Fight[] {
+export function parseReport(report: wcl.Report): Fight[] {
   if (Array.isArray(report.playerDetails.data.playerDetails)) return []; // Bad data
 
   const rPlayers = parsePlayerDetails(report.playerDetails.data.playerDetails);
@@ -108,18 +108,17 @@ export function parseReport(report: apiV2.Report): Fight[] {
 
     const key = world.KEYS.get(encounterId)!;
 
-    const mainAffix = f.keystoneAffixes.find((a) => a === world.TYRANNICAL || a === world.FORTIFIED)!;
-
     const players = findPlayers(rPlayers, f.friendlyPlayers).map((p) => ({
       ...p,
-      compareUrl: `/compare?reportId=${report.code}&fightId=${f.id}&mainAffix=${mainAffix}&encounterId=${key.encounterId}&classSpec=${p.classSpec}&sourceId=${p.id}`,
+      // TODO need the new compare link
+      // compareUrl: `/compare?reportId=${report.code}&fightId=${f.id}&mainAffix=${mainAffix}&encounterId=${key.encounterId}&classSpec=${p.classSpec}&sourceId=${p.id}`,
     }));
 
     return {
       key: key.title,
       image: key?.image ?? "",
       level: f.keystoneLevel,
-      affixes: f.keystoneAffixes.map((a) => world.AFFIX_MAP.get(a) ?? "unknown"),
+      affixes: f.keystoneAffixes.map((a) => world.AFFIX_MAP.get(a)!), // Fix !
       finished: f.kill ?? false,
       time: formatTime(keyTime),
       timed,
@@ -132,7 +131,7 @@ export function parseReport(report: apiV2.Report): Fight[] {
   });
 }
 
-function parsePlayerDetails(details: apiV2.PlayerRoleDetails): Map<number, RPlayer> {
+function parsePlayerDetails(details: wcl.PlayerRoleDetails): Map<number, RPlayer> {
   const rPlayers = new Map<number, RPlayer>();
 
   for (const role of ROLES) {

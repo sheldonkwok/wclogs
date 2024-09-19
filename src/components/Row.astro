@@ -29,7 +29,7 @@ const dps = players.slice(2);
     <div class="subRow">
       <span>{level}</span>
       <span class:list={["timer", keyExecution]}>{timeDiff}</span>
-      {affixes.map(a => <img src =`images/affixes/${a}.jpeg`>)} 
+      {affixes.map(a => <img src =`${a.icon}`>)} 
     </div>
     <Players players={dps} />
   </div>

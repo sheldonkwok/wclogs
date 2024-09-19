@@ -11,10 +11,10 @@
   },
   "dependencies": {
     "@astrojs/vercel": "~5.2.0",
-    "astro": "^3.5.0",
+    "astro": "^3.6.5",
     "p-map": "~6.0.0",
-    "redis": "~4.6.10",
-    "zod": "~3.22.3"
+    "redis": "~4.6.15",
+    "zod": "~3.22.5"
   },
   "prettier": {
     "printWidth": 110

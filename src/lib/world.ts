@@ -1,66 +1,48 @@
 import z from "zod";
-import config from "../../config.json";
 
-export const TYRANNICAL = 9;
-export const FORTIFIED = 10;
+import { request } from "./api";
+import { MPLUS_ZONE } from "./wcl";
 
-// Since I'm downloading image manually, I'm assuming these ids hold consistent
-export const AFFIXES = {
-  "1": "overflowing",
-  "2": "skittish",
-  "3": "volcanic",
-  "4": "necrotic",
-  "5": "teeming",
-  "6": "raging",
-  "7": "bolstering",
-  "8": "sanguine",
-  [TYRANNICAL]: "tyrannical",
-  [FORTIFIED]: "fortified",
-  "11": "bursting",
-  "12": "grievous",
-  "13": "explosive",
-  "14": "quaking",
-  "15": "relentless",
-  "16": "infested",
-  "117": "reaping",
-  "119": "beguiling",
-  "120": "awakened",
-  "121": "prideful",
-  "122": "inspiring",
-  "123": "spiteful",
-  "124": "storming",
-  "128": "tormented",
-  "129": "infernal",
-  "130": "encrypted",
-  "131": "shrouded",
-  "132": "thundering",
-  "134": "entangling",
-  "135": "afflicted",
-  "136": "incorporeal",
-  "137": "shielding",
-};
+const gql = String.raw; // syntax highlighting
 
-export const AFFIX_MAP = new Map<number, string>(
-  Object.entries(AFFIXES).map(([key, val]) => [Number(key), val])
-);
-
-const KeyZ = z.object({
-  title: z.string(),
-  timer: z.string().transform(parseTimeStr),
-  encounterId: z.number(),
-  image: z.string().transform((file) => `/images/keys/${file}.jpeg`),
+const ZRIOAffix = z.object({
+  id: z.number(),
+  name: z.string(),
+  icon: z.string().transform((name) => `https://cdn.raiderio.net/images/wow/icons/medium/${name}.jpg`),
 });
 
-const ConfigZ = z.object({ keys: z.array(KeyZ) });
+export type Affix = z.infer<typeof ZRIOAffix>;
 
-export type KeyInfo = z.infer<typeof KeyZ>;
+const ZRIOAffixesRequest = z.object({ affix_details: z.array(ZRIOAffix) });
 
-export const KEYS = await loadKeys();
+async function getRIOAffixes(): Promise<Map<number, Affix>> {
+  const RIO_AFFIX_URL = "https://raider.io/api/v1/mythic-plus/affixes?region=us&locale=en";
+  const req = await fetch(RIO_AFFIX_URL);
+  const data = await req.json();
+  const parsed = ZRIOAffixesRequest.parse(data);
 
-async function loadKeys(): Promise<Map<number, KeyInfo>> {
-  const { keys } = ConfigZ.parse(config);
+  const affixMap = new Map<number, Affix>();
 
-  const keyMap = new Map<number, KeyInfo>();
+  for (const affix of parsed.affix_details) {
+    affixMap.set(affix.id, affix);
+  }
+
+  return affixMap;
+}
+
+export const AFFIX_MAP = await getRIOAffixes();
+
+interface Key {
+  title: string;
+  encounterId: number;
+  timer: number;
+  image: string;
+}
+
+async function loadKeys(): Promise<Map<number, Key>> {
+  const keys = await getKeys();
+
+  const keyMap = new Map<number, Key>();
   for (const key of keys) {
     keyMap.set(key.encounterId, key);
   }
@@ -68,15 +50,85 @@ async function loadKeys(): Promise<Map<number, KeyInfo>> {
   return keyMap;
 }
 
-function parseTimeStr(timeStr: string): number {
-  const match = timeStr.match(/^(\d+)m((\d+)s)?$/);
-  if (!match) throw new Error("Invalid timer on key");
+async function getKeys(): Promise<Key[]> {
+  const [rioDungeons, wclEncounters] = await Promise.all([getRIODungeons(), getWCLEncounters()]);
 
-  const minutes = Number(match[1]);
-  let time = minutes * 60_000;
+  const idMap = new Map<string, number>();
+  for (const e of wclEncounters) {
+    idMap.set(e.name, e.id);
+  }
 
-  const seconds = match[3];
-  if (seconds) time += Number(seconds) * 1000;
+  return rioDungeons.map((d) => {
+    const encounterId = idMap.get(d.name);
+    if (!encounterId) throw new Error(`Mismatched rio/wcl dungeon ${d.name}`);
 
-  return time;
+    const key = {
+      title: d.name,
+      encounterId,
+      timer: d.keystone_timer_ms,
+      image: `https://cdn.raiderio.net${d.icon_url}`,
+    };
+
+    return key;
+  });
 }
+
+const ZRIODungeon = z.object({
+  name: z.string(),
+  icon_url: z.string(),
+  keystone_timer_ms: z.number(),
+});
+
+const ZRIODungeonRequest = z.object({
+  dungeons: z.array(
+    z.object({
+      dungeon: ZRIODungeon,
+    })
+  ),
+});
+
+async function getRIODungeons(): Promise<z.infer<typeof ZRIODungeon>[]> {
+  const RIO_DUNGEON_URL =
+    "https://raider.io/api/characters/mythic-plus-scored-runs?season=season-tww-1&role=all&mode=scored&affixes=all&date=all&characterId=66381995";
+  const req = await fetch(RIO_DUNGEON_URL);
+  const data = await req.json();
+  const parsed = ZRIODungeonRequest.parse(data);
+
+  return parsed.dungeons.map((d) => d.dungeon);
+}
+
+const WCL_ENCOUNTER_QUERY = gql`
+  query {
+    worldData {
+      zone(id: ${MPLUS_ZONE}) {
+        encounters {
+          name
+          id
+        }
+      }
+    }
+  }
+`;
+
+const ZEncounter = z.object({
+  name: z.string(),
+  id: z.number(),
+});
+
+const ZWorldDataRequest = z.object({
+  data: z.object({
+    worldData: z.object({
+      zone: z.object({
+        encounters: z.array(ZEncounter),
+      }),
+    }),
+  }),
+});
+
+async function getWCLEncounters(): Promise<z.infer<typeof ZEncounter>[]> {
+  const data = await request(WCL_ENCOUNTER_QUERY);
+  const parsed = ZWorldDataRequest.parse(data);
+  return parsed.data.worldData.zone.encounters;
+}
+
+export const KEYS = await loadKeys();
