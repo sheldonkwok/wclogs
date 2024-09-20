@@ -9,4 +9,7 @@ export default defineConfig({
     speedInsights: { enabled: true },
     edgeMiddleware: true
   }),
+  image: {
+    domains: ["cdn.raiderio.net"],
+  }
 });
