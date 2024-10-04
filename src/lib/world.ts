@@ -1,6 +1,7 @@
 import z from "zod";
 import pMap from "p-map";
 
+import redis from "./redis";
 import * as bnet from "./bnet";
 import { request } from "./wcl";
 import { MPLUS_ZONE } from "./wcl";
@@ -13,20 +14,34 @@ export type Affix = {
   icon: string;
 };
 
+const AFFIX_CACHE_KEY = "affixes";
+
 async function getAffixes(): Promise<Map<number, Affix>> {
   const affixMap = new Map<number, Affix>();
+  const cache = await redis.get(AFFIX_CACHE_KEY);
+  let entries: [number, Affix][];
 
-  const affixes = await bnet.getKeystoneAffixes();
+  if (!cache) {
+    const affixes = await bnet.getKeystoneAffixes();
+    entries = await pMap(
+      affixes.affixes,
+      async (a) => {
+        const media = await bnet.getKeystoneAffixMedia(a.id);
+        const affix = { ...a, icon: media.assets[0].value };
 
-  await pMap(
-    affixes.affixes,
-    async (a) => {
-      const media = await bnet.getKeystoneAffixMedia(a.id);
-      const affix = { ...a, icon: media.assets[0].value };
-      affixMap.set(affix.id, affix);
-    },
-    { concurrency: 5 }
-  );
+        return [a.id, affix];
+      },
+      { concurrency: 5 }
+    );
+
+    await redis.set(AFFIX_CACHE_KEY, JSON.stringify(entries));
+  } else {
+    entries = JSON.parse(cache);
+  }
+
+  for (const [id, affix] of entries) {
+    affixMap.set(id, affix);
+  }
 
   return affixMap;
 }
