@@ -17,7 +17,6 @@ export type Affix = {
 const AFFIX_CACHE_KEY = "affixes";
 
 async function getAffixes(): Promise<Map<number, Affix>> {
-  const affixMap = new Map<number, Affix>();
   const cache = await redis.get(AFFIX_CACHE_KEY);
   let entries: [number, Affix][];
 
@@ -39,11 +38,7 @@ async function getAffixes(): Promise<Map<number, Affix>> {
     entries = JSON.parse(cache);
   }
 
-  for (const [id, affix] of entries) {
-    affixMap.set(id, affix);
-  }
-
-  return affixMap;
+  return new Map<number, Affix>(entries);
 }
 
 export const AFFIX_MAP = await getAffixes();
