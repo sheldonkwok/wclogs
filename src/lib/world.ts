@@ -1,36 +1,37 @@
 import z from "zod";
+import pMap from "p-map";
 
-import { request } from "./api";
+import * as bnet from "./bnet";
+import { request } from "./wcl";
 import { MPLUS_ZONE } from "./wcl";
 
 const gql = String.raw; // syntax highlighting
 
-const ZRIOAffix = z.object({
-  id: z.number(),
-  name: z.string(),
-  icon: z.string().transform((name) => `https://cdn.raiderio.net/images/wow/icons/medium/${name}.jpg`),
-});
+export type Affix = {
+  id: number;
+  name: string;
+  icon: string;
+};
 
-export type Affix = z.infer<typeof ZRIOAffix>;
-
-const ZRIOAffixesRequest = z.object({ affix_details: z.array(ZRIOAffix) });
-
-async function getRIOAffixes(): Promise<Map<number, Affix>> {
-  const RIO_AFFIX_URL = "https://raider.io/api/v1/mythic-plus/affixes?region=us&locale=en";
-  const req = await fetch(RIO_AFFIX_URL);
-  const data = await req.json();
-  const parsed = ZRIOAffixesRequest.parse(data);
-
+async function getAffixes(): Promise<Map<number, Affix>> {
   const affixMap = new Map<number, Affix>();
 
-  for (const affix of parsed.affix_details) {
-    affixMap.set(affix.id, affix);
-  }
+  const affixes = await bnet.getKeystoneAffixes();
+
+  await pMap(
+    affixes.affixes,
+    async (a) => {
+      const media = await bnet.getKeystoneAffixMedia(a.id);
+      const affix = { ...a, icon: media.assets[0].value };
+      affixMap.set(affix.id, affix);
+    },
+    { concurrency: 5 }
+  );
 
   return affixMap;
 }
 
-export const AFFIX_MAP = await getRIOAffixes();
+export const AFFIX_MAP = await getAffixes();
 
 interface Key {
   title: string;
