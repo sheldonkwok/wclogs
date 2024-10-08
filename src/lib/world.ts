@@ -50,15 +50,22 @@ interface Key {
   image: string;
 }
 
-async function loadKeys(): Promise<Map<number, Key>> {
-  const keys = await getKeys();
+const KEY_CACHE_KEY = "keys";
 
-  const keyMap = new Map<number, Key>();
-  for (const key of keys) {
-    keyMap.set(key.encounterId, key);
+async function loadKeys(): Promise<Map<number, Key>> {
+  const cache = await redis.get(KEY_CACHE_KEY);
+  let entries: [number, Key][];
+
+  if (!cache) {
+    const keys = await getKeys();
+    entries = keys.map((k) => [k.encounterId, k]);
+
+    await redis.set(KEY_CACHE_KEY, JSON.stringify(entries));
+  } else {
+    entries = JSON.parse(cache);
   }
 
-  return keyMap;
+  return new Map<number, Key>(entries);
 }
 
 async function getKeys(): Promise<Key[]> {
