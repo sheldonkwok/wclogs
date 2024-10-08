@@ -7,7 +7,6 @@ const ZCompareQuery = z.object({
   reportId: z.string(),
   fightId: z.coerce.number(),
   classSpec: z.string(),
-  mainAffix: z.coerce.number(),
   encounterId: z.coerce.number(),
   sourceId: z.coerce.number(),
 });

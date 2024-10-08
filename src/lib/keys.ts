@@ -111,7 +111,7 @@ export function parseReport(report: wcl.Report): Fight[] {
     const players = findPlayers(rPlayers, f.friendlyPlayers).map((p) => ({
       ...p,
       // TODO need the new compare link
-      // compareUrl: `/compare?reportId=${report.code}&fightId=${f.id}&mainAffix=${mainAffix}&encounterId=${key.encounterId}&classSpec=${p.classSpec}&sourceId=${p.id}`,
+      compareUrl: `/compare?reportId=${report.code}&fightId=${f.id}&encounterId=${key.encounterId}&classSpec=${p.classSpec}&sourceId=${p.id}`,
     }));
 
     return {
