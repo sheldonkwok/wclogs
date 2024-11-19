@@ -104,7 +104,10 @@ export function parseReport(report: wcl.Report): Fight[] {
   return report.fights.reverse().map((f) => {
     const keyTime = f.keystoneTime ?? 0;
     const encounterId = f.encounterID;
-    const { timed, diff } = parseTime(encounterId, keyTime);
+
+    const affixes = f.keystoneAffixes.map((a) => world.AFFIX_MAP.get(a)!);
+    const hasPeril = !!affixes.find((a) => a.name === "Challenger's Peril");
+    const { timed, diff } = parseTime(encounterId, keyTime, hasPeril);
 
     const key = world.KEYS.get(encounterId)!;
 
@@ -118,7 +121,7 @@ export function parseReport(report: wcl.Report): Fight[] {
       key: key.title,
       image: key?.image ?? "",
       level: f.keystoneLevel,
-      affixes: f.keystoneAffixes.map((a) => world.AFFIX_MAP.get(a)!), // Fix !
+      affixes,
       finished: f.kill ?? false,
       time: formatTime(keyTime),
       timed,
@@ -196,11 +199,12 @@ function formatTime(ms: number): string {
 }
 
 const DEFAULT_TIME = Object.freeze({ timed: false, diff: "xx:xx" });
-function parseTime(encounterId: number, time: number): { timed: boolean; diff: string } {
+function parseTime(encounterId: number, time: number, peril: boolean): { timed: boolean; diff: string } {
   if (!time) return DEFAULT_TIME;
 
-  const timer = world.KEYS.get(encounterId)?.timer;
+  let timer = world.KEYS.get(encounterId)?.timer;
   if (!timer) return DEFAULT_TIME;
+  if (peril) timer += 90 * 1000;
 
   const timed = time < timer;
   const absDiff = formatTime(Math.abs(timer - time));

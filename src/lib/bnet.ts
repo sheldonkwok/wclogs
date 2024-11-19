@@ -4,7 +4,82 @@ import redis from "./redis";
 import { ZAuth } from "./utils";
 
 const BASE_URL = "https://us.api.blizzard.com/data/wow";
-const DEFAULT_QS = "namespace=static-us&locale=en_US";
+
+const ZMythicLeaderboard = z.object({
+  current_leaderboards: z.array(
+    z.object({
+      id: z.number(),
+      name: z.string(),
+    })
+  ),
+});
+
+export async function getMythicLeaderboard(): Promise<z.infer<typeof ZMythicLeaderboard>> {
+  const token = await getAuth();
+  const response = await fetch(
+    `${BASE_URL}/connected-realm/11/mythic-leaderboard/index?namespace=dynamic-us&locale=en_US`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  const data = await response.text();
+  const parsed = ZMythicLeaderboard.parse(JSON.parse(data));
+  return parsed;
+}
+
+const ZMythicKeystone = z.object({
+  id: z.number(),
+  name: z.string(),
+  dungeon: z.object({
+    id: z.number(),
+    key: z.object({ href: z.string() }),
+  }),
+  keystone_upgrades: z.array(
+    z.object({
+      upgrade_level: z.number(),
+      qualifying_duration: z.number(),
+    })
+  ),
+});
+
+export async function getMythicKeystone(keystoneId: number): Promise<z.infer<typeof ZMythicKeystone>> {
+  const token = await getAuth();
+  const response = await fetch(
+    `${BASE_URL}/mythic-keystone/dungeon/${keystoneId}?namespace=dynamic-us&locale=en_US`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  const data = await response.text();
+  const parsed = ZMythicKeystone.parse(JSON.parse(data));
+  return parsed;
+}
+
+const ZJournalInstanceMedia = z.object({
+  assets: z.array(z.object({ value: z.string() })),
+});
+
+export async function getJournalInstanceMedia(
+  journalId: number,
+  namespace: string
+): Promise<z.infer<typeof ZJournalInstanceMedia>> {
+  const token = await getAuth();
+  const response = await fetch(`${BASE_URL}/media/journal-instance/${journalId}?namespace=${namespace}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await response.text();
+  const parsed = ZJournalInstanceMedia.parse(JSON.parse(data));
+  return parsed;
+}
 
 const ZKeystoneAffixes = z.object({
   affixes: z.array(
@@ -17,7 +92,7 @@ const ZKeystoneAffixes = z.object({
 
 export async function getKeystoneAffixes(): Promise<z.infer<typeof ZKeystoneAffixes>> {
   const token = await getAuth();
-  const response = await fetch(`${BASE_URL}/keystone-affix/index?${DEFAULT_QS}`, {
+  const response = await fetch(`${BASE_URL}/keystone-affix/index?namespace=static-us&locale=en_US`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -31,7 +106,6 @@ export async function getKeystoneAffixes(): Promise<z.infer<typeof ZKeystoneAffi
 const ZKeystoneAffixMedia = z.object({
   assets: z.array(
     z.object({
-      key: z.string(),
       value: z.string(),
     })
   ),
@@ -39,7 +113,7 @@ const ZKeystoneAffixMedia = z.object({
 
 export async function getKeystoneAffixMedia(id: number): Promise<z.infer<typeof ZKeystoneAffixMedia>> {
   const token = await getAuth();
-  const response = await fetch(`${BASE_URL}/media/keystone-affix/${id}?${DEFAULT_QS}`, {
+  const response = await fetch(`${BASE_URL}/media/keystone-affix/${id}?namespace=static-us&locale=en_US`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },

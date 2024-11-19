@@ -69,50 +69,56 @@ async function loadKeys(): Promise<Map<number, Key>> {
 }
 
 async function getKeys(): Promise<Key[]> {
-  const [rioDungeons, wclEncounters] = await Promise.all([getRIODungeons(), getWCLEncounters()]);
+  const [seasonDungeons, wclEncounters] = await Promise.all([getSeasonDungeons(), getWCLEncounters()]);
 
   const idMap = new Map<string, number>();
   for (const e of wclEncounters) {
     idMap.set(e.name, e.id);
   }
 
-  return rioDungeons.map((d) => {
+  return seasonDungeons.map((d) => {
     const encounterId = idMap.get(d.name);
     if (!encounterId) throw new Error(`Mismatched rio/wcl dungeon ${d.name}`);
 
     const key = {
       title: d.name,
       encounterId,
-      timer: d.keystone_timer_ms,
-      image: `https://cdn.raiderio.net${d.icon_url}`,
+      timer: d.timer,
+      image: d.icon,
     };
 
     return key;
   });
 }
 
-const ZRIODungeon = z.object({
-  name: z.string(),
-  icon_url: z.string(),
-  keystone_timer_ms: z.number(),
-});
+export interface SeasonDungeons {
+  name: string;
+  icon: string;
+  timer: number;
+}
 
-const ZRIODungeonRequest = z.object({
-  dungeons: z.array(
-    z.object({
-      dungeon: ZRIODungeon,
-    })
-  ),
-});
+async function getSeasonDungeons(): Promise<SeasonDungeons[]> {
+  const leaderboard = await bnet.getMythicLeaderboard();
+  const currKeys = leaderboard.current_leaderboards;
 
-async function getRIODungeons(): Promise<z.infer<typeof ZRIODungeon>[]> {
-  const RIO_DUNGEON_URL =
-    "https://raider.io/api/characters/mythic-plus-scored-runs?season=season-tww-1&role=all&mode=scored&affixes=all&date=all&characterId=66381995";
-  const req = await fetch(RIO_DUNGEON_URL);
-  const data = await req.json();
-  const parsed = ZRIODungeonRequest.parse(data);
+  return pMap(
+    currKeys,
+    async (key) => {
+      const mKey = await bnet.getMythicKeystone(key.id);
+      const timer = mKey.keystone_upgrades[0].qualifying_duration;
 
-  return parsed.dungeons.map((d) => d.dungeon);
+      const journalUrl = mKey.dungeon.key.href;
+      const usp = new URLSearchParams(new URL(journalUrl).search);
+      const namespace = usp.get("namespace");
+      if (!namespace) throw new Error(`No namespace in ${journalUrl}`);
+
+      const media = await bnet.getJournalInstanceMedia(mKey.dungeon.id, namespace);
+      const icon = media.assets[0].value;
+
+      return { name: key.name, icon, timer };
+    },
+    { concurrency: 3 }
+  );
 }
 
 const WCL_ENCOUNTER_QUERY = gql`
