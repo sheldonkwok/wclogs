@@ -3,10 +3,12 @@
   "type": "module",
   "version": "0.0.1",
   "scripts": {
+    "d": "pnpm run --parallel \"/^(dev|redis)$/\"",
     "dev": "astro dev",
     "start": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
+    "redis": "redis-server --save \"\" --appendonly no",
     "astro": "astro"
   },
   "dependencies": {
