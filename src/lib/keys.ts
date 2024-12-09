@@ -65,7 +65,7 @@ async function getReports(): Promise<Fight[]> {
     const report = await wcl.getReport(reportId);
     const fights = parseReport(report);
 
-    await redis.set(reportId, JSON.stringify(fights), { EX: 7 * DAY });
+    await redis.set(reportId, JSON.stringify(fights), { EX: 5 * DAY });
     return fights;
   });
 
@@ -85,7 +85,7 @@ export async function getReportIds(): Promise<string[]> {
     consts.GUILD_SERVER_REGION
   );
 
-  const reportIds = reports.map((r) => r.id);
+  const reportIds = reports.slice(0, 12).map((r) => r.id);
 
   await redis.set(REPORT_ID_KEY, reportIds.join(REPORT_SEPARATOR), { EX: 5 * 60 });
   return reportIds;
