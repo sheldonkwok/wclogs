@@ -3,8 +3,8 @@
   "type": "module",
   "version": "0.0.1",
   "scripts": {
-    "d": "pnpm run --parallel \"/^(dev|redis)$/\"",
-    "dev": "astro dev",
+    "dev": "pnpm run --parallel \"/^(astro:dev|redis)$/\"",
+    "astro:dev": "astro dev",
     "start": "astro dev",
     "build": "astro build",
     "preview": "astro preview",

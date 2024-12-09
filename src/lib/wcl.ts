@@ -15,57 +15,6 @@ const MYTHIC_DIFF = 10;
 export const MPLUS_ZONE = 39;
 const FIGHTS = `[${[...Array(100).keys()].join(" ")}]`;
 
-function getReportsQuery(): string {
-  return gql`
-    query {
-      reportData {
-        reports(guildID: 365689, limit: 10, startTime: 1726025941, zoneID: ${MPLUS_ZONE}) {
-          data {
-            title
-            owner {
-              name
-            }
-            startTime
-            fights(difficulty: ${MYTHIC_DIFF}) {
-              encounterID
-              difficulty
-              name
-            }
-          }
-        }
-      }
-    }
-  `;
-}
-
-function getReportQuery(code: string): string {
-  return gql`
-    query {
-      reportData {
-        report(code: "${code}") {
-          code
-          owner {
-            name
-          }
-          startTime
-          playerDetails(fightIDs: ${FIGHTS})
-          fights(difficulty: ${MYTHIC_DIFF}) {
-            id
-            name
-            encounterID
-            keystoneLevel
-            keystoneAffixes
-            kill
-            friendlyPlayers
-            keystoneTime
-            startTime
-          }
-        }
-      }
-    }
-  `;
-}
-
 const ZPlayer = z.object({
   id: z.number(),
   name: z.string(),
@@ -106,29 +55,65 @@ const ZFight = z.object({
 });
 
 const ZReport = z.object({
-  code: z.string(),
   owner: z.object({ name: z.string() }),
   startTime: z.number(),
   playerDetails: ZPlayerDetails,
   fights: z.array(ZFight),
 });
 
-const ZReportDataRequest = z.object({
+export type Report = z.infer<typeof ZReport>;
+
+const ZReportsQuery = z.object({
   data: z.object({
     reportData: z.object({
-      report: ZReport,
+      reports: z.object({
+        data: z.array(ZReport),
+      }),
     }),
   }),
 });
 
-export type Report = z.infer<typeof ZReport>;
+const GUILD_ID = 365689; // TODO Replace
 
-export async function getReport(code: string): Promise<z.infer<typeof ZReport>> {
-  const query = getReportQuery(code);
+function getReportsQuery(): string {
+  const now = new Date();
+  const start = now.setMonth(now.getMonth() - 1);
 
+  return gql`
+    query {
+      reportData {
+        reports(guildID: ${GUILD_ID}, limit: 10, startTime: ${start}, zoneID: ${MPLUS_ZONE}) {
+          data {
+            title
+            owner {
+              name
+            }
+            startTime
+            playerDetails(fightIDs: ${FIGHTS})
+            fights(difficulty: ${MYTHIC_DIFF}) {
+              id
+              name
+              encounterID
+              keystoneLevel
+              keystoneAffixes
+              kill
+              friendlyPlayers
+              keystoneTime
+              startTime
+            }
+          }
+        }
+      }
+    }
+  `;
+}
+
+export async function getReports(): Promise<Report[]> {
+  const query = getReportsQuery();
   const data = await request(query);
-  const parsed = ZReportDataRequest.parse(data);
-  return parsed.data.reportData.report;
+
+  const parsed = ZReportsQuery.parse(data);
+  return parsed.data.reportData.reports.data;
 }
 
 const ZComposition = z.object({ name: z.string(), id: z.number(), type: z.string() });
@@ -179,31 +164,6 @@ export async function getRankings(
   });
 
   return ZEncounter.parse(encounters);
-}
-
-const ZReportPage = z.object({
-  id: z.string(),
-  zone: z.number(),
-});
-
-const ZReportArr = z.array(ZReportPage);
-
-// TODO replace this with the gql query
-export async function getReports(
-  guildName: string,
-  serverName: string,
-  serverRegion: string
-): Promise<z.infer<typeof ZReportArr>> {
-  const now = new Date();
-  const start = now.setMonth(now.getMonth() - 3);
-
-  const data = await get(`/reports/guild/${guildName}/${serverName}/${serverRegion}`, {
-    start,
-  });
-
-  const reports = ZReportArr.parse(data);
-  const final = reports.filter((r) => r.zone === MPLUS_ZONE);
-  return final;
 }
 
 export async function request(query: string): Promise<unknown> {

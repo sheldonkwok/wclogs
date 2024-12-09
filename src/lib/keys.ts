@@ -52,43 +52,10 @@ export async function getKeys(): Promise<KeyData> {
 }
 
 async function getReports(): Promise<Fight[]> {
-  const reportIds = await getReportIds();
+  const reports = await wcl.getReports();
 
-  // typing on mget is broke
-  const cache = (await redis.mGet(reportIds)) as any as (string | null)[];
-
-  // not type safe rn
-  const allFights = await pMap(cache, async (cachedReport, index) => {
-    if (cachedReport) return JSON.parse(cachedReport) as Fight[];
-
-    const reportId = reportIds[index];
-    const report = await wcl.getReport(reportId);
-    const fights = parseReport(report);
-
-    await redis.set(reportId, JSON.stringify(fights), { EX: 5 * DAY });
-    return fights;
-  });
-
-  return cleanReports(allFights.flat());
-}
-
-export const REPORT_ID_KEY = "reportIds";
-const REPORT_SEPARATOR = ",";
-
-export async function getReportIds(): Promise<string[]> {
-  const cached = await redis.get(REPORT_ID_KEY);
-  if (cached) return cached.split(REPORT_SEPARATOR);
-
-  const reports = await wcl.getReports(
-    consts.GUILD_NAME,
-    consts.GUILD_SERVER_NAME,
-    consts.GUILD_SERVER_REGION
-  );
-
-  const reportIds = reports.slice(0, 12).map((r) => r.id);
-
-  await redis.set(REPORT_ID_KEY, reportIds.join(REPORT_SEPARATOR), { EX: 5 * 60 });
-  return reportIds;
+  const parsed = reports.flatMap(parseReport);
+  return cleanReports(parsed);
 }
 
 export function parseReports(reports: wcl.Report[]): Fight[] {
