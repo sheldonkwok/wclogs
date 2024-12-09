@@ -55,6 +55,7 @@ const ZFight = z.object({
 });
 
 const ZReport = z.object({
+  code: z.string(),
   owner: z.object({ name: z.string() }),
   startTime: z.number(),
   playerDetails: ZPlayerDetails,
@@ -85,6 +86,7 @@ function getReportsQuery(): string {
         reports(guildID: ${GUILD_ID}, limit: 10, startTime: ${start}, zoneID: ${MPLUS_ZONE}) {
           data {
             title
+            code
             owner {
               name
             }
