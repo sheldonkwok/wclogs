@@ -7,6 +7,7 @@ export default defineConfig({
   adapter: vercel({
     webAnalytics: { enabled: true, },
     speedInsights: { enabled: true },
+    isr: { expiration: 60 }, 
     edgeMiddleware: true
   }),
   image: {
