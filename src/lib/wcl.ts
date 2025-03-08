@@ -12,7 +12,7 @@ const KEY = import.meta.env.API_KEY_V1;
 const gql = String.raw; // for syntax highlighting
 
 const MYTHIC_DIFF = 10;
-export const MPLUS_ZONE = 39;
+export const MPLUS_ZONE = 43;
 const FIGHTS = `[${[...Array(100).keys()].join(" ")}]`;
 
 const ZPlayer = z.object({
