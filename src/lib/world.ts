@@ -18,17 +18,22 @@ const AFFIX_CACHE_KEY = "affixes";
 
 async function getAffixes(): Promise<Map<number, Affix>> {
   const cache = await redis.get(AFFIX_CACHE_KEY);
-  let entries: [number, Affix][];
+  let entries: [number, Affix][] = [];
 
   if (!cache) {
     const affixes = await bnet.getKeystoneAffixes();
-    entries = await pMap(
+    await pMap(
       affixes.affixes,
-      async (a) => {
-        const media = await bnet.getKeystoneAffixMedia(a.id);
-        const affix = { ...a, icon: media.assets[0].value };
+      async ({ id, name }) => {
+        if (!name) return;
 
-        return [a.id, affix];
+        const media = await bnet.getKeystoneAffixMedia(id);
+        const asset = media.assets?.[0];
+        if (!asset) return;
+
+        const affix = { id, name, icon: asset.value };
+
+        entries.push([id, affix]);
       },
       { concurrency: 5 }
     );

@@ -85,7 +85,7 @@ const ZKeystoneAffixes = z.object({
   affixes: z.array(
     z.object({
       id: z.number(),
-      name: z.string(),
+      name: z.string().nullable(),
     })
   ),
 });
@@ -104,11 +104,13 @@ export async function getKeystoneAffixes(): Promise<z.infer<typeof ZKeystoneAffi
 }
 
 const ZKeystoneAffixMedia = z.object({
-  assets: z.array(
-    z.object({
-      value: z.string(),
-    })
-  ),
+  assets: z
+    .array(
+      z.object({
+        value: z.string(),
+      })
+    )
+    .optional(),
 });
 
 export async function getKeystoneAffixMedia(id: number): Promise<z.infer<typeof ZKeystoneAffixMedia>> {
