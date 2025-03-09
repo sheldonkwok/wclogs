@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import redis from "./redis";
 import { ZAuth } from "./utils";
+import { WCL_SEASON_ZONE as MPLUS_ZONE } from "./consts";
 
 // v2
 const CLIENT_ID = import.meta.env.CLIENT_ID;
@@ -12,7 +13,7 @@ const KEY = import.meta.env.API_KEY_V1;
 const gql = String.raw; // for syntax highlighting
 
 const MYTHIC_DIFF = 10;
-export const MPLUS_ZONE = 43;
+
 const FIGHTS = `[${[...Array(100).keys()].join(" ")}]`;
 
 const ZPlayer = z.object({
@@ -224,3 +225,5 @@ export async function get(path: string, qs?: Record<string, string | number | bo
   const req = await fetch(url);
   return await req.json();
 }
+
+export { WCL_SEASON_ZONE as MPLUS_ZONE } from "./consts";
