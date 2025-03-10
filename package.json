@@ -13,11 +13,10 @@
   },
   "dependencies": {
     "@astrojs/vercel": "~7.8.2",
+    "arktype": "~2.1.9",
     "astro": "^4.16.18",
     "p-map": "~7.0.3",
-    "redis": "~4.7.0",
-    "sharp": "~0.33.5",
-    "zod": "~3.23.8"
+    "redis": "~4.7.0"
   },
   "prettier": {
     "printWidth": 110

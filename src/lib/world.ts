@@ -1,10 +1,9 @@
-import z from "zod";
 import pMap from "p-map";
+import { type } from "arktype";
 
 import redis from "./redis";
 import * as bnet from "./bnet";
-import { request } from "./wcl";
-import { MPLUS_ZONE } from "./wcl";
+import { request, MPLUS_ZONE } from "./wcl";
 
 const gql = String.raw; // syntax highlighting
 
@@ -139,24 +138,30 @@ const WCL_ENCOUNTER_QUERY = gql`
   }
 `;
 
-const ZEncounter = z.object({
-  name: z.string(),
-  id: z.number(),
+const Encounter = type({
+  id: "number",
+  name: "string",
 });
 
-const ZWorldDataRequest = z.object({
-  data: z.object({
-    worldData: z.object({
-      zone: z.object({
-        encounters: z.array(ZEncounter),
-      }),
-    }),
-  }),
+const WorldDataRequest = type({
+  data: {
+    worldData: {
+      zone: {
+        encounters: Encounter.array(),
+      },
+    },
+  },
 });
 
-async function getWCLEncounters(): Promise<z.infer<typeof ZEncounter>[]> {
+export type WorldDataRequest = typeof WorldDataRequest.infer;
+export type Encounter = typeof Encounter.infer;
+
+async function getWCLEncounters(): Promise<Encounter[]> {
   const data = await request(WCL_ENCOUNTER_QUERY);
-  const parsed = ZWorldDataRequest.parse(data);
+
+  const parsed = WorldDataRequest(data);
+  if (parsed instanceof type.errors) throw new Error(parsed.summary);
+
   return parsed.data.worldData.zone.encounters;
 }
 

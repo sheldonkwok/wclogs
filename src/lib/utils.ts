@@ -1,6 +1,6 @@
-import z from "zod";
+import { type } from "arktype";
 
-export const ZAuth = z.object({
-  access_token: z.string(),
-  expires_in: z.number(),
+export const Auth = type({
+  access_token: "string",
+  expires_in: "number",
 });

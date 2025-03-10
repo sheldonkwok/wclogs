@@ -1,14 +1,14 @@
+import { type } from "arktype";
 import type { APIContext } from "astro";
-import { z } from "zod";
 
 import * as compare from "../lib/compare";
 
-const ZCompareQuery = z.object({
-  reportId: z.string(),
-  fightId: z.coerce.number(),
-  classSpec: z.string(),
-  encounterId: z.coerce.number(),
-  sourceId: z.coerce.number(),
+const CompareQuery = type({
+  reportId: "string",
+  fightId: "number",
+  classSpec: "string",
+  encounterId: "number",
+  sourceId: "number",
 });
 
 export async function GET({ request, redirect }: APIContext) {
@@ -16,8 +16,18 @@ export async function GET({ request, redirect }: APIContext) {
   const searchP = new URLSearchParams(search);
   const qs = Object.fromEntries(searchP.entries());
 
-  const parsed = ZCompareQuery.parse(qs);
-  const url = await compare.getCompareURL(parsed);
+  // Need to coerce number fields since URLSearchParams gives strings
+  const parsed = CompareQuery({
+    ...qs,
+    fightId: Number(qs.fightId),
+    encounterId: Number(qs.encounterId),
+    sourceId: Number(qs.sourceId),
+  });
 
+  if (parsed instanceof type.errors) {
+    throw new Error("Invalid compare query parameters");
+  }
+
+  const url = await compare.getCompareURL(parsed);
   return redirect(url, 307);
 }

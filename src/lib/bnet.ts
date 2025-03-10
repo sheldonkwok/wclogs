@@ -1,20 +1,20 @@
-import { z } from "zod";
+import { type } from "arktype";
 
 import redis from "./redis";
-import { ZAuth } from "./utils";
+import { Auth } from "./utils";
+
+export const DefaultMeta = type({
+  id: "number",
+  name: "string | null",
+});
 
 const BASE_URL = "https://us.api.blizzard.com/data/wow";
 
-const ZMythicLeaderboard = z.object({
-  current_leaderboards: z.array(
-    z.object({
-      id: z.number(),
-      name: z.string(),
-    })
-  ),
+const MythicLeaderboard = type({
+  current_leaderboards: DefaultMeta.array(),
 });
 
-export async function getMythicLeaderboard(): Promise<z.infer<typeof ZMythicLeaderboard>> {
+export async function getMythicLeaderboard(): Promise<typeof MythicLeaderboard.infer> {
   const token = await getAuth();
   const response = await fetch(
     `${BASE_URL}/connected-realm/11/mythic-leaderboard/index?namespace=dynamic-us&locale=en_US`,
@@ -26,26 +26,26 @@ export async function getMythicLeaderboard(): Promise<z.infer<typeof ZMythicLead
   );
 
   const data = await response.text();
-  const parsed = ZMythicLeaderboard.parse(JSON.parse(data));
+  const parsed = MythicLeaderboard(JSON.parse(data));
+  if (parsed instanceof type.errors) {
+    throw new Error("Invalid mythic leaderboard response");
+  }
   return parsed;
 }
 
-const ZMythicKeystone = z.object({
-  id: z.number(),
-  name: z.string(),
-  dungeon: z.object({
-    id: z.number(),
-    key: z.object({ href: z.string() }),
-  }),
-  keystone_upgrades: z.array(
-    z.object({
-      upgrade_level: z.number(),
-      qualifying_duration: z.number(),
-    })
-  ),
+const MythicKeystone = type({
+  "...": DefaultMeta,
+  dungeon: {
+    id: "number",
+    key: { href: "string" },
+  },
+  keystone_upgrades: type({
+    upgrade_level: "number",
+    qualifying_duration: "number",
+  }).array(),
 });
 
-export async function getMythicKeystone(keystoneId: number): Promise<z.infer<typeof ZMythicKeystone>> {
+export async function getMythicKeystone(keystoneId: number): Promise<typeof MythicKeystone.infer> {
   const token = await getAuth();
   const response = await fetch(
     `${BASE_URL}/mythic-keystone/dungeon/${keystoneId}?namespace=dynamic-us&locale=en_US`,
@@ -57,18 +57,21 @@ export async function getMythicKeystone(keystoneId: number): Promise<z.infer<typ
   );
 
   const data = await response.text();
-  const parsed = ZMythicKeystone.parse(JSON.parse(data));
+  const parsed = MythicKeystone(JSON.parse(data));
+  if (parsed instanceof type.errors) {
+    throw new Error("Invalid mythic keystone response");
+  }
   return parsed;
 }
 
-const ZJournalInstanceMedia = z.object({
-  assets: z.array(z.object({ value: z.string() })),
+const JournalInstanceMedia = type({
+  assets: type({ value: "string" }).array(),
 });
 
 export async function getJournalInstanceMedia(
   journalId: number,
   namespace: string
-): Promise<z.infer<typeof ZJournalInstanceMedia>> {
+): Promise<typeof JournalInstanceMedia.infer> {
   const token = await getAuth();
   const response = await fetch(`${BASE_URL}/media/journal-instance/${journalId}?namespace=${namespace}`, {
     headers: {
@@ -76,21 +79,15 @@ export async function getJournalInstanceMedia(
     },
   });
 
-  const data = await response.text();
-  const parsed = ZJournalInstanceMedia.parse(JSON.parse(data));
-  return parsed;
+  const data = await response.json();
+  return JournalInstanceMedia.assert(data);
 }
 
-const ZKeystoneAffixes = z.object({
-  affixes: z.array(
-    z.object({
-      id: z.number(),
-      name: z.string().nullable(),
-    })
-  ),
+const KeystoneAffixes = type({
+  affixes: DefaultMeta.array(),
 });
 
-export async function getKeystoneAffixes(): Promise<z.infer<typeof ZKeystoneAffixes>> {
+export async function getKeystoneAffixes(): Promise<typeof KeystoneAffixes.infer> {
   const token = await getAuth();
   const response = await fetch(`${BASE_URL}/keystone-affix/index?namespace=static-us&locale=en_US`, {
     headers: {
@@ -98,22 +95,15 @@ export async function getKeystoneAffixes(): Promise<z.infer<typeof ZKeystoneAffi
     },
   });
 
-  const data = await response.text();
-  const parsed = ZKeystoneAffixes.parse(JSON.parse(data));
-  return parsed;
+  const data = await response.json();
+  return KeystoneAffixes.assert(data);
 }
 
-const ZKeystoneAffixMedia = z.object({
-  assets: z
-    .array(
-      z.object({
-        value: z.string(),
-      })
-    )
-    .optional(),
+const KeystoneAffixMedia = type({
+  "assets?": type({ value: "string" }).array(),
 });
 
-export async function getKeystoneAffixMedia(id: number): Promise<z.infer<typeof ZKeystoneAffixMedia>> {
+export async function getKeystoneAffixMedia(id: number): Promise<typeof KeystoneAffixMedia.infer> {
   const token = await getAuth();
   const response = await fetch(`${BASE_URL}/media/keystone-affix/${id}?namespace=static-us&locale=en_US`, {
     headers: {
@@ -122,7 +112,10 @@ export async function getKeystoneAffixMedia(id: number): Promise<z.infer<typeof 
   });
 
   const data = await response.json();
-  const parsed = ZKeystoneAffixMedia.parse(data);
+  const parsed = KeystoneAffixMedia(data);
+  if (parsed instanceof type.errors) {
+    throw new Error("Invalid keystone affix media response");
+  }
   return parsed;
 }
 
@@ -149,7 +142,10 @@ async function getAuth(): Promise<string> {
   }
 
   const data = await response.json();
-  const { access_token, expires_in } = ZAuth.parse(data);
+  const parsed = Auth(data);
+  if (parsed instanceof type.errors) throw new Error(parsed.summary);
+
+  const { access_token, expires_in } = parsed;
 
   await redis.set(TOKEN_KEY, access_token, { EX: Math.floor(expires_in / 2) });
 

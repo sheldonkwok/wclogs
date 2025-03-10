@@ -1,8 +1,8 @@
-import { z } from "zod";
+import { type } from "arktype";
 
 import redis from "./redis";
-import { ZAuth } from "./utils";
-import { WCL_SEASON_ZONE as MPLUS_ZONE } from "./consts";
+import { Auth } from "./utils";
+import { WCL_SEASON_ZONE as MPLUS_ZONE, GUILD_ID } from "./consts";
 
 // v2
 const CLIENT_ID = import.meta.env.CLIENT_ID;
@@ -16,66 +16,68 @@ const MYTHIC_DIFF = 10;
 
 const FIGHTS = `[${[...Array(100).keys()].join(" ")}]`;
 
-const ZPlayer = z.object({
-  id: z.number(),
-  name: z.string(),
-  type: z.string(),
-  icon: z.string(),
-  server: z.string(),
+const Player = type({
+  id: "number",
+  name: "string",
+  type: "string",
+  icon: "string",
+  server: "string",
 });
 
-const ZPlayerRoleDetails = z.object({
-  tanks: z.array(ZPlayer).optional(),
-  healers: z.array(ZPlayer).optional(),
-  dps: z.array(ZPlayer).optional(),
+export const ROLES = ["tanks", "healers", "dps"] as const;
+export type Role = keyof typeof ROLES;
+
+const PlayerRole = Player.or("undefined").array();
+
+const PlayerRoleDetails = type({
+  [ROLES[0]]: PlayerRole,
+  [ROLES[1]]: PlayerRole,
+  [ROLES[2]]: PlayerRole,
 });
 
-export type PlayerRoleDetails = z.infer<typeof ZPlayerRoleDetails>;
+export type PlayerRoleDetails = typeof PlayerRoleDetails.infer;
 
-const ZRole = ZPlayerRoleDetails.keyof();
-
-export const ROLES = ZRole.options;
-export type Role = z.infer<typeof ZRole>;
-
-const ZPlayerDetails = z.object({
-  data: z.object({
-    playerDetails: z.union([ZPlayerRoleDetails, z.array(z.null())]),
-  }),
+const PlayerDetails = type({
+  data: {
+    playerDetails: PlayerRoleDetails.or(type.null.array()),
+  },
 });
 
-const ZFight = z.object({
-  id: z.number(),
-  name: z.string(),
-  encounterID: z.number(),
-  keystoneLevel: z.number(),
-  keystoneAffixes: z.array(z.number()),
-  kill: z.boolean(),
-  friendlyPlayers: z.array(z.number()),
-  startTime: z.number(),
-  keystoneTime: z.number().nullable(),
+const Fight = type({
+  id: "number",
+  name: "string",
+  encounterID: "number",
+  keystoneLevel: "number",
+  keystoneAffixes: "number[]",
+  kill: "boolean",
+  friendlyPlayers: "number[]",
+  startTime: "number",
+  keystoneTime: "number | null",
 });
 
-const ZReport = z.object({
-  code: z.string(),
-  owner: z.object({ name: z.string() }),
-  startTime: z.number(),
-  playerDetails: ZPlayerDetails,
-  fights: z.array(ZFight),
+const Report = type({
+  code: "string",
+  owner: {
+    name: "string",
+  },
+  startTime: "number",
+  playerDetails: PlayerDetails,
+  fights: Fight.array(),
 });
 
-export type Report = z.infer<typeof ZReport>;
+export type Report = typeof Report.infer;
 
-const ZReportsQuery = z.object({
-  data: z.object({
-    reportData: z.object({
-      reports: z.object({
-        data: z.array(ZReport),
-      }),
-    }),
-  }),
+const ReportsQuery = type({
+  data: {
+    reportData: {
+      reports: {
+        data: Report.array(),
+      },
+    },
+  },
 });
 
-const GUILD_ID = 365689; // TODO Replace
+const NUM_REPORTS = 12;
 
 function getReportsQuery(): string {
   const now = new Date();
@@ -84,7 +86,7 @@ function getReportsQuery(): string {
   return gql`
     query {
       reportData {
-        reports(guildID: ${GUILD_ID}, limit: 10, startTime: ${start}, zoneID: ${MPLUS_ZONE}) {
+        reports(guildID: ${GUILD_ID}, limit: ${NUM_REPORTS}, startTime: ${start}, zoneID: ${MPLUS_ZONE}) {
           data {
             title
             code
@@ -115,50 +117,70 @@ export async function getReports(): Promise<Report[]> {
   const query = getReportsQuery();
   const data = await request(query);
 
-  const parsed = ZReportsQuery.parse(data);
-  return parsed.data.reportData.reports.data;
+  const parsed = ReportsQuery.assert(data);
+  const reportData = parsed.data.reportData;
+
+  return reportData.reports.data;
 }
 
-const ZComposition = z.object({ name: z.string(), id: z.number(), type: z.string() });
-const ZSummary = z.object({ composition: z.array(ZComposition) });
+const Composition = type({
+  name: "string",
+  id: "number",
+  type: "string",
+});
 
-export async function getComposition(reportId: string): Promise<z.infer<typeof ZComposition>[]> {
+const Summary = type({
+  composition: [Composition],
+});
+
+export async function getComposition(reportId: string): Promise<(typeof Composition.infer)[]> {
   const data = await get(`/report/tables/summary/${reportId}`, {
     hostility: 1, // helps with filtering speed
     sourceclass: "junk", // helps with filtering speed
     end: 10000000, // could probably calculate the actual time to help with this
   });
-  return ZSummary.parse(data).composition;
+
+  const parsed = Summary.assert(data);
+  return parsed.composition;
 }
 
-const ZIdentifier = z.object({ id: z.number(), name: z.string() });
-const ZClass = ZIdentifier.extend({ specs: z.array(ZIdentifier) });
-const ZClassArr = z.array(ZClass);
-
-export async function getClasses(): Promise<z.infer<typeof ZClassArr>> {
-  const data = await get("/classes");
-  const parsed = ZClassArr.parse(data);
-
-  return parsed;
-}
-
-const ZRanking = z.object({
-  name: z.string(),
-  serverName: z.string(),
-  reportID: z.string(),
-  fightID: z.number(),
-  score: z.number(),
-  affixes: z.array(z.number()),
+const Identifier = type({
+  id: "number",
+  name: "string",
 });
-export type Ranking = z.infer<typeof ZRanking>;
 
-const ZEncounter = z.object({ rankings: z.array(ZRanking) });
+const Class = type({
+  "...": Identifier,
+  specs: [Identifier],
+});
+
+const ClassArr = type([Class]);
+
+export async function getClasses(): Promise<typeof ClassArr.infer> {
+  const data = await get("/classes");
+  return ClassArr.assert(data);
+}
+
+const Ranking = type({
+  name: "string",
+  serverName: "string",
+  reportID: "string",
+  fightID: "number",
+  score: "number",
+  affixes: "number[]",
+});
+
+export type Ranking = typeof Ranking.infer;
+
+const Encounter = type({
+  rankings: [Ranking],
+});
 
 export async function getRankings(
   encounterId: number,
   classId: number,
   specId: number
-): Promise<z.infer<typeof ZEncounter>> {
+): Promise<typeof Encounter.infer> {
   const encounters = await get(`/rankings/encounter/${encounterId}`, {
     class: classId,
     spec: specId,
@@ -166,7 +188,7 @@ export async function getRankings(
     page: 1,
   });
 
-  return ZEncounter.parse(encounters);
+  return Encounter.assert(encounters);
 }
 
 export async function request(query: string): Promise<unknown> {
@@ -202,7 +224,12 @@ async function getAuth(): Promise<string> {
   if (!res.ok) throw new Error("Error fetching auth");
 
   const data = await res.json();
-  const { access_token, expires_in } = ZAuth.parse(data);
+  const parsed = Auth(data);
+  if (parsed instanceof type.errors) {
+    throw new Error("Invalid auth response");
+  }
+
+  const { access_token, expires_in } = parsed;
 
   await redis.set(TOKEN_KEY, access_token, { EX: expires_in / 2 });
 
