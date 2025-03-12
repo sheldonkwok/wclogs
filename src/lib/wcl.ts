@@ -130,7 +130,7 @@ const Composition = type({
 });
 
 const Summary = type({
-  composition: [Composition],
+  composition: Composition.array(),
 });
 
 export async function getComposition(reportId: string): Promise<(typeof Composition.infer)[]> {
@@ -151,10 +151,10 @@ const Identifier = type({
 
 const Class = type({
   "...": Identifier,
-  specs: [Identifier],
+  specs: Identifier.array(),
 });
 
-const ClassArr = type([Class]);
+const ClassArr = type(Class.array());
 
 export async function getClasses(): Promise<typeof ClassArr.infer> {
   const data = await get("/classes");
@@ -173,7 +173,7 @@ const Ranking = type({
 export type Ranking = typeof Ranking.infer;
 
 const Encounter = type({
-  rankings: [Ranking],
+  rankings: Ranking.array(),
 });
 
 export async function getRankings(
