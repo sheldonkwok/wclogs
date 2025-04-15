@@ -1,0 +1,15 @@
+{
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "logs.fmj.io"
+        }
+      ],
+      "destination": "https://logs.fmj.gg/$1",
+      "permanent": true
+    }
+  ]
+} 
