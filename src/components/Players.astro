@@ -4,7 +4,7 @@ import type { Role, RPlayer } from "../lib/keys";
 const { players } = Astro.props as { players: RPlayer[] };
 
 function showImg(role: Role, index: number): boolean {
-	if (role !== 'dps') return true;
+	if (role !== "dps") return true;
 	return index === 0;
 }
 
@@ -15,7 +15,7 @@ function showImg(role: Role, index: number): boolean {
 		players.map((p, i) => (
 			<>
 				{showImg(p.role, i) ? <img class="role-img" src=`images/roles/${p.role}.webp` /> : <></>}
-				<a class={p.type.toLowerCase()} href={p.compareUrl ?? p.rioUrl}>
+				<a class={p.type.toLowerCase()} href={p.compareUrl ?? p.rioUrl} target="_blank">
 					{p.name}
 				</a>
 			</>

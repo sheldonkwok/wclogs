@@ -25,7 +25,7 @@ const Player = type({
 });
 
 export const ROLES = ["tanks", "healers", "dps"] as const;
-export type Role = keyof typeof ROLES;
+export type Role = (typeof ROLES)[number];
 
 const PlayerRole = Player.or("undefined").array();
 
