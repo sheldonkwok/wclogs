@@ -2,6 +2,9 @@
   "name": "wclogs",
   "type": "module",
   "version": "0.0.1",
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "dev": "pnpm run --parallel \"/^(astro:dev|redis)$/\"",
     "astro:dev": "astro dev",
