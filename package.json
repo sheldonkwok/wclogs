@@ -15,11 +15,11 @@
     "astro": "astro"
   },
   "dependencies": {
-    "@astrojs/vercel": "~7.8.2",
-    "arktype": "~2.1.9",
-    "astro": "^4.16.18",
+    "@astrojs/vercel": "~8.2.2",
+    "arktype": "~2.1.20",
+    "astro": "^5.11.2",
     "p-map": "~7.0.3",
-    "redis": "~4.7.0"
+    "redis": "~4.7.1"
   },
   "prettier": {
     "printWidth": 110
