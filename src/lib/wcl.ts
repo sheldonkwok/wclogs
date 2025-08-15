@@ -25,15 +25,15 @@ const ZoneQuery = type({
   },
 });
 
-let MPLUS_ZONE = 0;
+let _MPLUS_ZONE = 0;
 const MPLUS_ZONE_KEY = "wcl:mpluszone";
 async function getCurrMPlus(): Promise<number> {
-  if (MPLUS_ZONE !== 0) return MPLUS_ZONE;
+  if (_MPLUS_ZONE !== 0) return _MPLUS_ZONE;
 
   const redisCache = await redis.get(MPLUS_ZONE_KEY);
   if (redisCache) {
-    MPLUS_ZONE = Number(redisCache);
-    return MPLUS_ZONE;
+    _MPLUS_ZONE = Number(redisCache);
+    return _MPLUS_ZONE;
   }
 
   const query = gql`
@@ -54,10 +54,10 @@ async function getCurrMPlus(): Promise<number> {
 
   for (const z of zones) {
     if (z.name.startsWith("Mythic+")) {
-      MPLUS_ZONE = z.id;
+      _MPLUS_ZONE = z.id;
 
-      await redis.set(MPLUS_ZONE_KEY, MPLUS_ZONE);
-      return MPLUS_ZONE;
+      await redis.set(MPLUS_ZONE_KEY, _MPLUS_ZONE);
+      return _MPLUS_ZONE;
     }
   }
 
