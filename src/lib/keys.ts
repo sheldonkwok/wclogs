@@ -109,6 +109,7 @@ function parsePlayerDetails(details: wcl.PlayerRoleDetails): Map<number, RPlayer
     if (!playerRoles) continue;
 
     for (const player of playerRoles) {
+      if (!player) continue;
       rPlayers.set(player.id, {
         id: player.id,
         role: role,

@@ -15,7 +15,7 @@ const dps = players.slice(2);
 <div class="row">
   <div class="subRow" style={{ paddingBottom: "0.2em" }}>
     <div class="subRow">
-      <Image src={image} alt={key} inferSize />
+      <img src={image} alt={key} onerror={"this.style.display='none'"}/>
       <a href={url}>
         {key}
       </a>
