@@ -2,7 +2,7 @@ import { type } from "arktype";
 
 import redis from "./redis";
 import { Auth } from "./utils";
-import { WCL_SEASON_ZONE as MPLUS_ZONE, GUILD_ID } from "./consts";
+import { GUILD_ID } from "./consts";
 
 // v2
 const CLIENT_ID = import.meta.env.CLIENT_ID;
@@ -11,6 +11,97 @@ const CLIENT_SECRET = import.meta.env.CLIENT_SECRET;
 // v1
 const KEY = import.meta.env.API_KEY_V1;
 const gql = String.raw; // for syntax highlighting
+
+const Zone = type({
+  id: "number",
+  name: "string",
+});
+
+const ZoneQuery = type({
+  data: {
+    worldData: {
+      zones: Zone.array(),
+    },
+  },
+});
+
+let MPLUS_ZONE = 0;
+const MPLUS_ZONE_KEY = "wcl:mpluszone";
+async function getCurrMPlus(): Promise<number> {
+  if (MPLUS_ZONE !== 0) return MPLUS_ZONE;
+
+  const redisCache = await redis.get(MPLUS_ZONE_KEY);
+  if (redisCache) {
+    MPLUS_ZONE = Number(redisCache);
+    return MPLUS_ZONE;
+  }
+
+  const query = gql`
+    query {
+      worldData {
+        zones {
+          id
+          name
+        }
+      }
+    }
+  `;
+
+  const data = await request(query);
+
+  const parsed = ZoneQuery.assert(data);
+  const zones = parsed.data.worldData.zones;
+
+  for (const z of zones) {
+    if (z.name.startsWith("Mythic+")) {
+      MPLUS_ZONE = z.id;
+
+      await redis.set(MPLUS_ZONE_KEY, MPLUS_ZONE);
+      return MPLUS_ZONE;
+    }
+  }
+
+  throw new Error("Couldn't find latest m+ zone");
+}
+
+const Encounter = type({
+  id: "number",
+  name: "string",
+});
+
+const WorldDataRequest = type({
+  data: {
+    worldData: {
+      zone: {
+        encounters: Encounter.array(),
+      },
+    },
+  },
+});
+
+export type WorldDataRequest = typeof WorldDataRequest.infer;
+export type Encounter = typeof Encounter.infer;
+
+export async function getWCLEncounters(): Promise<Encounter[]> {
+  const query = gql`
+    query {
+      worldData {
+        zone(id: ${await getCurrMPlus()}) {
+          encounters {
+            name
+            id
+          }
+        }
+      }
+    }
+  `;
+  const data = await request(query);
+
+  const parsed = WorldDataRequest(data);
+  if (parsed instanceof type.errors) throw new Error(parsed.summary);
+
+  return parsed.data.worldData.zone.encounters;
+}
 
 const MYTHIC_DIFF = 10;
 
@@ -79,14 +170,14 @@ const ReportsQuery = type({
 
 const NUM_REPORTS = 12;
 
-function getReportsQuery(): string {
+async function getReportsQuery(): Promise<string> {
   const now = new Date();
   const start = now.setMonth(now.getMonth() - 1);
 
   return gql`
     query {
       reportData {
-        reports(guildID: ${GUILD_ID}, limit: ${NUM_REPORTS}, startTime: ${start}, zoneID: ${MPLUS_ZONE}) {
+        reports(guildID: ${GUILD_ID}, limit: ${NUM_REPORTS}, startTime: ${start}, zoneID: ${await getCurrMPlus()}) {
           data {
             title
             code
@@ -114,7 +205,7 @@ function getReportsQuery(): string {
 }
 
 export async function getReports(): Promise<Report[]> {
-  const query = getReportsQuery();
+  const query = await getReportsQuery();
   const data = await request(query);
 
   const parsed = ReportsQuery.assert(data);
@@ -172,7 +263,7 @@ const Ranking = type({
 
 export type Ranking = typeof Ranking.infer;
 
-const Encounter = type({
+const Rankings = type({
   rankings: Ranking.array(),
 });
 
@@ -180,7 +271,7 @@ export async function getRankings(
   encounterId: number,
   classId: number,
   specId: number
-): Promise<typeof Encounter.infer> {
+): Promise<typeof Rankings.infer> {
   const encounters = await get(`/rankings/encounter/${encounterId}`, {
     class: classId,
     spec: specId,
@@ -188,7 +279,7 @@ export async function getRankings(
     page: 1,
   });
 
-  return Encounter.assert(encounters);
+  return Rankings.assert(encounters);
 }
 
 export async function request(query: string): Promise<unknown> {
@@ -197,7 +288,7 @@ export async function request(query: string): Promise<unknown> {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${TOKEN}`,
+      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify({ query }),
   });
@@ -206,12 +297,17 @@ export async function request(query: string): Promise<unknown> {
   return reqData;
 }
 
+let TOKEN_CACHE: string = "";
 const TOKEN_KEY = "auth:wcl:v2";
-const TOKEN = await getAuth();
 
 async function getAuth(): Promise<string> {
-  const cache = await redis.get(TOKEN_KEY);
-  if (cache) return cache;
+  if (TOKEN_CACHE) return TOKEN_CACHE;
+
+  const redisCache = await redis.get(TOKEN_KEY);
+  if (redisCache) {
+    TOKEN_CACHE = redisCache;
+    return TOKEN_CACHE;
+  }
 
   const res = await fetch("https://www.warcraftlogs.com/oauth/token", {
     method: "POST",
@@ -232,6 +328,7 @@ async function getAuth(): Promise<string> {
   const { access_token, expires_in } = parsed;
 
   await redis.set(TOKEN_KEY, access_token, { EX: expires_in / 2 });
+  TOKEN_CACHE = access_token;
 
   return access_token;
 }
@@ -252,5 +349,3 @@ export async function get(path: string, qs?: Record<string, string | number | bo
   const req = await fetch(url);
   return await req.json();
 }
-
-export { WCL_SEASON_ZONE as MPLUS_ZONE } from "./consts";

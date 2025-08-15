@@ -3,7 +3,7 @@ import { type } from "arktype";
 
 import redis from "./redis";
 import * as bnet from "./bnet";
-import { request, MPLUS_ZONE } from "./wcl";
+import { getWCLEncounters } from "./wcl";
 
 const gql = String.raw; // syntax highlighting
 
@@ -82,7 +82,10 @@ async function getKeys(): Promise<Key[]> {
 
   return seasonDungeons.map((d) => {
     const encounterId = idMap.get(d.name);
-    if (!encounterId) throw new Error(`Mismatched rio/wcl dungeon ${d.name}`);
+    if (!encounterId) {
+      const mapStr = [...idMap].map(([k, v]) => `${k}:${v}`).join(", ");
+      throw new Error(`Mismatched rio/wcl dungeon ${d.name} in ${mapStr}`);
+    }
 
     const key = {
       title: d.name,
@@ -96,7 +99,7 @@ async function getKeys(): Promise<Key[]> {
 }
 
 export interface SeasonDungeons {
-  name: string;
+  name: string | null;
   icon: string;
   timer: number;
 }
@@ -123,46 +126,6 @@ async function getSeasonDungeons(): Promise<SeasonDungeons[]> {
     },
     { concurrency: 3 }
   );
-}
-
-const WCL_ENCOUNTER_QUERY = gql`
-  query {
-    worldData {
-      zone(id: ${MPLUS_ZONE}) {
-        encounters {
-          name
-          id
-        }
-      }
-    }
-  }
-`;
-
-const Encounter = type({
-  id: "number",
-  name: "string",
-});
-
-const WorldDataRequest = type({
-  data: {
-    worldData: {
-      zone: {
-        encounters: Encounter.array(),
-      },
-    },
-  },
-});
-
-export type WorldDataRequest = typeof WorldDataRequest.infer;
-export type Encounter = typeof Encounter.infer;
-
-async function getWCLEncounters(): Promise<Encounter[]> {
-  const data = await request(WCL_ENCOUNTER_QUERY);
-
-  const parsed = WorldDataRequest(data);
-  if (parsed instanceof type.errors) throw new Error(parsed.summary);
-
-  return parsed.data.worldData.zone.encounters;
 }
 
 export const KEYS = await loadKeys();
