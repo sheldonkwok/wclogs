@@ -99,7 +99,7 @@ async function getKeys(): Promise<Key[]> {
 }
 
 export interface SeasonDungeons {
-  name: string | null;
+  name: string;
   icon: string;
   timer: number;
 }
@@ -122,6 +122,7 @@ async function getSeasonDungeons(): Promise<SeasonDungeons[]> {
       const media = await bnet.getJournalInstanceMedia(mKey.dungeon.id, namespace);
       const icon = media.assets[0].value;
 
+      if (!key.name) throw new Error(`Could not match ${mKey.name}`);
       return { name: key.name, icon, timer };
     },
     { concurrency: 3 }

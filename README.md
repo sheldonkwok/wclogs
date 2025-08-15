@@ -1,1 +1,1 @@
-[logs.fmj.io](https://logs.fmj.io)
+[logs.fmj.gg](https://logs.fmj.gg)
