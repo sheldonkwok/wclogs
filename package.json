@@ -17,7 +17,7 @@
   "dependencies": {
     "@astrojs/vercel": "~8.2.5",
     "arktype": "~2.1.20",
-    "astro": "^5.13.0",
+    "astro": "^5.13.1",
     "p-map": "~7.0.3",
     "redis": "~4.7.1"
   },
