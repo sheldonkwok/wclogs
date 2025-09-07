@@ -5,12 +5,11 @@ import Row from "../components/Row.astro";
 import { getKeys } from "../lib/keys";
 
 const { data, time } = await getKeys();
-const LIMIT = 15;
 ---
 
 <Layout>
   <main>
-    {data.slice(0, LIMIT).map((d) => <Row {...d} />)}
+    {data.map((d) => <Row {...d} />)}
 
     <footer>API time: {time}ms</footer>
   </main>

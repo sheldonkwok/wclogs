@@ -51,11 +51,20 @@ export async function getKeys(): Promise<KeyData> {
   return { data, time };
 }
 
-async function getReports(): Promise<Fight[]> {
-  const reports = await wcl.getReports();
+const WEEK = 7;
+async function getReports(since: number = WEEK): Promise<Fight[]> {
+  const reports = await wcl.getReports(since);
 
   const parsed = reports.flatMap(parseReport);
-  return cleanReports(parsed);
+  const cleaned = cleanReports(parsed);
+
+  if (cleaned.length > 0 || since > WEEK) return cleaned;
+
+  // Fall back to a month.
+  // Could cache the fallback eventually but
+  // not having keys within a week probably means season is dead
+  const month = 30;
+  return getReports(month);
 }
 
 export function parseReports(reports: wcl.Report[]): Fight[] {
@@ -183,6 +192,8 @@ function parseTime(encounterId: number, time: number, peril: boolean): { timed: 
 
 const PREF_OWNER = "FMJustice";
 const MS_RANGE = 60 * 1000;
+const LIMIT = 15;
+
 function cleanReports(reports: Fight[]): Fight[] {
   if (reports.length === 0) return [];
 
@@ -190,17 +201,26 @@ function cleanReports(reports: Fight[]): Fight[] {
 
   const cleaned = [reports[0]];
 
-  for (let i = 1; i < reports.length; i++) {
-    const prevIndex = cleaned.length - 1;
+  for (let i = 0; i < reports.length; i++) {
     const curr = reports[i];
+    if (curr.level === 0 || curr.players.length === 0) continue;
+
+    const prevIndex = cleaned.length - 1;
     const prev = cleaned[prevIndex];
 
-    if (curr.key === prev.key && curr.level === prev.level && MS_RANGE > Math.abs(curr.date - prev.date)) {
+    if (
+      prev &&
+      curr.key === prev.key &&
+      curr.level === prev.level &&
+      MS_RANGE > Math.abs(curr.date - prev.date)
+    ) {
       if (curr.owner === PREF_OWNER) continue;
       cleaned[prevIndex] = curr;
     } else {
       cleaned.push(curr);
     }
+
+    if (cleaned.length === LIMIT) break;
   }
 
   return cleaned;

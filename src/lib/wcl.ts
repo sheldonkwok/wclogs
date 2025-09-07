@@ -170,9 +170,9 @@ const ReportsQuery = type({
 
 const NUM_REPORTS = 12;
 
-async function getReportsQuery(): Promise<string> {
+async function getReportsQuery(since: number): Promise<string> {
   const now = new Date();
-  const start = now.setMonth(now.getMonth() - 1);
+  const start = now.setDate(now.getDate() - since);
 
   return gql`
     query {
@@ -204,8 +204,8 @@ async function getReportsQuery(): Promise<string> {
   `;
 }
 
-export async function getReports(): Promise<Report[]> {
-  const query = await getReportsQuery();
+export async function getReports(since: number): Promise<Report[]> {
+  const query = await getReportsQuery(since);
   const data = await request(query);
 
   const parsed = ReportsQuery.assert(data);
