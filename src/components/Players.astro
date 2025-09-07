@@ -15,13 +15,46 @@ function showImg(role: Role, index: number): boolean {
 		players.map((p, i) => (
 			<>
 				{showImg(p.role, i) ? <img class="role-img" src=`images/roles/${p.role}.webp` /> : <></>}
-				<a class={p.type.toLowerCase()} href={p.compareUrl ?? p.rioUrl} target="_blank">
+				<a 
+					class={p.type.toLowerCase()} 
+					href={p.compareUrl ?? p.rioUrl} 
+					target="_blank"
+					data-rio-url={p.rioUrl}
+					data-compare-url={p.compareUrl}
+					onclick="handlePlayerClick(event, this)"
+				>
 					{p.name}
 				</a>
 			</>
 		))
 	}
 </div>
+
+<script>
+	let rKeyPressed: boolean = false;
+	const isR = (key: string) => key === 'r' || key === 'R';
+
+	document.addEventListener('keydown', (e: KeyboardEvent) => {
+		if (isR(e.key)) rKeyPressed = true;
+	});
+
+	document.addEventListener('keyup', (e: KeyboardEvent) => {
+		if (isR(e.key)) rKeyPressed = false;
+	});
+
+	(window as any).handlePlayerClick = function(event: MouseEvent, element: HTMLAnchorElement): void {
+		const rioUrl  = element.getAttribute('data-rio-url')!;
+
+		if (rKeyPressed) {
+			element.href = rioUrl;
+		} else {
+			const compareUrl = element.getAttribute('data-compare-url')!;
+			if (element.href === rioUrl && compareUrl) element.href = compareUrl;
+		}
+
+		rKeyPressed = false;
+	};
+</script>
 
 <style>
 	a {
