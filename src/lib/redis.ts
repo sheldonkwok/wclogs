@@ -1,7 +1,5 @@
-import redis from "redis";
+import Redis from "ioredis";
 
-const redisUrl = import.meta.env.REDIS_URL;
-const redisClient = redis.createClient({ url: redisUrl });
-await redisClient.connect();
+const redisClient = new Redis(import.meta.env.REDIS_URL);
 
 export default redisClient;

@@ -147,7 +147,7 @@ async function getAuth(): Promise<string> {
 
   const { access_token, expires_in } = parsed;
 
-  await redis.set(TOKEN_KEY, access_token, { EX: Math.floor(expires_in / 2) });
+  await redis.set(TOKEN_KEY, access_token, "EX", Math.floor(expires_in / 2));
 
   return access_token;
 }

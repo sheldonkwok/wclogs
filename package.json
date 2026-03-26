@@ -20,8 +20,8 @@
     "@vercel/speed-insights": "^2.0.0",
     "arktype": "~2.2.0",
     "astro": "^6.1.0",
+    "ioredis": "^5.10.1",
     "p-map": "~7.0.4",
-    "redis": "^5.11.0",
     "sharp": "^0.34.5"
   },
   "prettier": {

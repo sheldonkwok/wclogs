@@ -5,6 +5,11 @@
         "hooks": [
           {
             "type": "command",
+            "command": "astro build",
+            "statusMessage": "Building..."
+          },
+          {
+            "type": "command",
             "command": "npx playwright test",
             "statusMessage": "Running tests..."
           }
