@@ -4,6 +4,7 @@ dump.rdb
 
 # generated types
 .astro/
+test-results
 
 # dependencies
 node_modules/

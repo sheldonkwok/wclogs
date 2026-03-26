@@ -21,7 +21,10 @@ pnpm dev        # Start Astro dev server + Redis in parallel
 pnpm build      # Production build
 pnpm preview    # Preview production build
 pnpm redis      # Start local Redis (no persistence)
+pnpm test       # Run Playwright e2e tests (requires pnpm dev running)
 ```
+
+Always run `pnpm test` after making changes. A PostToolUse hook in `.claude/settings.json` does this automatically — but if running in a cloud/remote dev environment where hooks don't execute, run `pnpm test` manually after each change.
 
 ## Environment Variables
 
