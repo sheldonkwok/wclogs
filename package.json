@@ -6,8 +6,7 @@
     "node": ">=24.x"
   },
   "scripts": {
-    "dev": "pnpm run --parallel \"/^(astro:dev|redis)$/\"",
-    "astro:dev": "astro dev --host",
+    "dev": "astro dev --host",
     "start": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
@@ -28,6 +27,7 @@
     "printWidth": 110
   },
   "devDependencies": {
-    "@playwright/test": "^1.58.2"
+    "@playwright/test": "^1.58.2",
+    "ioredis-mock": "^8.13.1"
   }
 }

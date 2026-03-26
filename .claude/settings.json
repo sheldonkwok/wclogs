@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "astro build",
+            "command": "npx astro build",
             "statusMessage": "Building..."
           },
           {

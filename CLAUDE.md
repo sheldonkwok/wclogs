@@ -17,7 +17,7 @@ Live at: logs.fmj.gg
 ## Dev Commands
 
 ```bash
-pnpm dev        # Start Astro dev server + Redis in parallel
+pnpm dev        # Start Astro dev server (uses ioredis-mock locally)
 pnpm build      # Production build
 pnpm preview    # Preview production build
 pnpm redis      # Start local Redis (no persistence)
