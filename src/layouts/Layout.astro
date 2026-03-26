@@ -1,4 +1,5 @@
 ---
+import SpeedInsights from "@vercel/speed-insights/astro";
 ---
 
 <!DOCTYPE html>
@@ -12,6 +13,7 @@
   </head>
   <body>
     <slot />
+    <SpeedInsights />
   </body>
 </html>
 <style is:global>

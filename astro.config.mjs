@@ -6,11 +6,10 @@ export default defineConfig({
   output: "server",
   adapter: vercel({
     webAnalytics: { enabled: true, },
-    speedInsights: { enabled: true },
-    // isr: { expiration: 60 }, 
-    edgeMiddleware: true
+    // isr: { expiration: 60 },
+    middlewareMode: 'edge'
   }),
   image: {
-    domains: ["cdn.raiderio.net"],
+    domains: ["cdn.raiderio.net", "render.worldofwarcraft.com"],
   }
 });

@@ -3,7 +3,7 @@
   "type": "module",
   "version": "0.0.1",
   "engines": {
-    "node": "22.x"
+    "node": ">=24.x"
   },
   "scripts": {
     "dev": "pnpm run --parallel \"/^(astro:dev|redis)$/\"",
@@ -16,11 +16,12 @@
     "test": "playwright test"
   },
   "dependencies": {
-    "@astrojs/vercel": "~8.2.5",
-    "arktype": "~2.1.20",
-    "astro": "^5.13.0",
-    "p-map": "~7.0.3",
-    "redis": "~4.7.1"
+    "@astrojs/vercel": "^10.0.3",
+    "@vercel/speed-insights": "^2.0.0",
+    "arktype": "~2.2.0",
+    "astro": "^6.1.0",
+    "p-map": "~7.0.4",
+    "redis": "^5.11.0"
   },
   "prettier": {
     "printWidth": 110

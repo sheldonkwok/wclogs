@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "pnpm test 2>/dev/null || true",
+            "command": "npx playwright test",
             "statusMessage": "Running tests..."
           }
         ]
