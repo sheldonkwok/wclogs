@@ -21,7 +21,8 @@
     "arktype": "~2.2.0",
     "astro": "^6.1.0",
     "p-map": "~7.0.4",
-    "redis": "^5.11.0"
+    "redis": "^5.11.0",
+    "sharp": "^0.34.5"
   },
   "prettier": {
     "printWidth": 110
