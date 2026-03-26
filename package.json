@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "pnpm run --parallel \"/^(astro:dev|redis)$/\"",
-    "astro:dev": "astro dev",
+    "astro:dev": "astro dev --host",
     "start": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
