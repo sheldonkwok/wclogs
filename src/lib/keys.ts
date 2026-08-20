@@ -199,7 +199,7 @@ function cleanReports(reports: Fight[]): Fight[] {
 
   reports.sort((a, b) => b.date - a.date);
 
-  const cleaned = [reports[0]];
+  const cleaned: Fight[] = [];
 
   for (let i = 0; i < reports.length; i++) {
     const curr = reports[i];
