@@ -15,19 +15,19 @@
     "test": "playwright test"
   },
   "dependencies": {
-    "@astrojs/vercel": "^10.0.3",
+    "@astrojs/vercel": "^11.0.7",
     "@vercel/speed-insights": "^2.0.0",
-    "arktype": "~2.2.0",
-    "astro": "^6.1.0",
+    "arktype": "~2.2.3",
+    "astro": "^7.2.4",
     "ioredis": "^5.10.1",
-    "p-map": "~7.0.4",
-    "sharp": "^0.34.5"
+    "p-map": "~7.0.6",
+    "sharp": "^0.35.3"
   },
   "prettier": {
     "printWidth": 110
   },
   "devDependencies": {
-    "@playwright/test": "^1.58.2",
+    "@playwright/test": "^1.62.1",
     "ioredis-mock": "^8.13.1"
   }
 }
