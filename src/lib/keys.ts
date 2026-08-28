@@ -110,8 +110,26 @@ export function parseReport(report: wcl.Report): Fight[] {
   });
 }
 
-function parsePlayerDetails(details: wcl.PlayerRoleDetails): Map<number, RPlayer> {
-  const rPlayers = new Map<number, RPlayer>();
+const TANK_SPECS = new Set([
+  "DeathKnight-Blood",
+  "DemonHunter-Vengeance",
+  "Druid-Guardian",
+  "Monk-Brewmaster",
+  "Paladin-Protection",
+  "Warrior-Protection",
+]);
+
+// The API rolls every fight in a report into one set of player details so a
+// player who swapped specs lands in multiple roles. Track their tank entry
+// separately since the later dps one overwrites it.
+interface ReportPlayers {
+  all: Map<number, RPlayer>;
+  tanks: Map<number, RPlayer>;
+}
+
+function parsePlayerDetails(details: wcl.PlayerRoleDetails): ReportPlayers {
+  const all = new Map<number, RPlayer>();
+  const tanks = new Map<number, RPlayer>();
 
   for (const role of ROLES) {
     const playerRoles = details[role];
@@ -119,18 +137,24 @@ function parsePlayerDetails(details: wcl.PlayerRoleDetails): Map<number, RPlayer
 
     for (const player of playerRoles) {
       if (!player) continue;
-      rPlayers.set(player.id, {
+
+      const rPlayer: RPlayer = {
         id: player.id,
         role: role,
         name: player.name,
         type: player.type,
         classSpec: player.icon,
         rioUrl: `https://raider.io/characters/us/${player.server}/${player.name}`,
-      });
+      };
+
+      all.set(player.id, rPlayer);
+      if (role === "tanks" || TANK_SPECS.has(rPlayer.classSpec)) {
+        tanks.set(player.id, { ...rPlayer, role: "tanks" });
+      }
     }
   }
 
-  return rPlayers;
+  return { all, tanks };
 }
 
 const UNKNOWN_PLAYER = Object.freeze({
@@ -142,15 +166,27 @@ const UNKNOWN_PLAYER = Object.freeze({
   rioUrl: "",
 });
 
+// A key with no tank means whoever tanked it got merged into another role, so
+// pick the member who tanked or held a tank spec somewhere in the report
+function markTank(players: RPlayer[], tanks: Map<number, RPlayer>): RPlayer[] {
+  const i = players.findIndex((p) => tanks.has(p.id));
+  if (i === -1) return players;
+
+  const marked = [...players];
+  marked[i] = tanks.get(marked[i].id)!;
+
+  return marked;
+}
+
 // The API can mix up runs if the party is filled in another run
-function findPlayers(rPlayers: Map<number, RPlayer>, playerIds: number[]): RPlayer[] {
+function findPlayers({ all, tanks }: ReportPlayers, playerIds: number[]): RPlayer[] {
   let hasTank = false;
   let hasHealer = false;
 
   const found = playerIds
     .sort((a, b) => a - b)
     .map((p) => {
-      const rp = rPlayers.get(p);
+      const rp = all.get(p);
       if (!rp) return UNKNOWN_PLAYER;
 
       return rp;
@@ -165,10 +201,11 @@ function findPlayers(rPlayers: Map<number, RPlayer>, playerIds: number[]): RPlay
       }
 
       return true;
-    })
-    .sort((a, b) => ROLES.indexOf(a.role) - ROLES.indexOf(b.role));
+    });
 
-  return found.slice(0, 5);
+  const withTank = hasTank ? found : markTank(found, tanks);
+
+  return withTank.sort((a, b) => ROLES.indexOf(a.role) - ROLES.indexOf(b.role)).slice(0, 5);
 }
 
 function formatTime(ms: number): string {
