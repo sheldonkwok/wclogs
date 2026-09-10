@@ -18,7 +18,7 @@
     "@astrojs/vercel": "^11.0.7",
     "@vercel/speed-insights": "^2.0.0",
     "arktype": "~2.2.3",
-    "astro": "^7.2.4",
+    "astro": "^7.2.8",
     "ioredis": "^5.10.1",
     "p-map": "~7.0.6",
     "sharp": "^0.35.3"
