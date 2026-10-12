@@ -284,7 +284,7 @@ export async function getRankings(
 
 export async function request(query: string): Promise<unknown> {
   const token = await getAuth();
-  const request = await fetch("https://www.warcraftlogs.com/api/v2/client", {
+  const res = await fetch("https://www.warcraftlogs.com/api/v2/client", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -293,7 +293,12 @@ export async function request(query: string): Promise<unknown> {
     body: JSON.stringify({ query }),
   });
 
-  const reqData = await request.json();
+  const body = await res.text();
+  if (!res.ok) throw new Error(`WCL v2 request failed (${res.status}): ${body.slice(0, 500)}`);
+
+  const reqData = JSON.parse(body);
+  if (reqData?.errors) throw new Error(`WCL v2 returned errors: ${JSON.stringify(reqData.errors).slice(0, 500)}`);
+
   return reqData;
 }
 
