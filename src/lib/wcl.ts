@@ -282,9 +282,8 @@ export async function getRankings(
   return Rankings.assert(encounters);
 }
 
-export async function request(query: string): Promise<unknown> {
-  const token = await getAuth();
-  const res = await fetch("https://www.warcraftlogs.com/api/v2/client", {
+async function post(query: string, token: string): Promise<Response> {
+  return fetch("https://www.warcraftlogs.com/api/v2/client", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -292,6 +291,17 @@ export async function request(query: string): Promise<unknown> {
     },
     body: JSON.stringify({ query }),
   });
+}
+
+export async function request(query: string): Promise<unknown> {
+  const token = await getAuth();
+  let res = await post(query, token);
+
+  // WCL can revoke a token before it expires, so drop the cached one and retry once
+  if (res.status === 401) {
+    await clearAuth(token);
+    res = await post(query, await getAuth());
+  }
 
   const body = await res.text();
   if (!res.ok) throw new Error(`WCL v2 request failed (${res.status}): ${body.slice(0, 500)}`);
@@ -336,6 +346,12 @@ async function getAuth(): Promise<string> {
   TOKEN_CACHE = access_token;
 
   return access_token;
+}
+
+async function clearAuth(rejected: string): Promise<void> {
+  // a concurrent request may have already replaced the rejected token
+  if (TOKEN_CACHE === rejected) TOKEN_CACHE = "";
+  if ((await redis.get(TOKEN_KEY)) === rejected) await redis.del(TOKEN_KEY);
 }
 
 const BASE_URL = "https://www.warcraftlogs.com/v1";
