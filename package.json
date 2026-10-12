@@ -19,7 +19,7 @@
     "@vercel/speed-insights": "^2.0.0",
     "arktype": "~2.2.3",
     "astro": "^7.2.4",
-    "ioredis": "^5.10.1",
+    "ioredis": "^6.0.0",
     "p-map": "~7.0.6",
     "sharp": "^0.35.3"
   },
